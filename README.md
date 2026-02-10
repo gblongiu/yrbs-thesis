@@ -1,7 +1,7 @@
 # Predicting Youth Mental Health Risk from Bullying Exposure in the 2023 YRBS
 
 ## Current Status
-As of 2026-02-09, this repository is aligned through **Week 4** of the proposal timeline.
+This repository contains the code, documentation, and curated evidence artifacts for my INFO-I 492 senior thesis using 2023 YRBS microdata.
 
 - Week 1: question/scope/reproducibility setup complete
 - Week 2: analysis-ready dataset + data dictionary complete
