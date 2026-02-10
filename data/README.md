@@ -1,8 +1,15 @@
-# Data Directory
+# Data Directory Policy
 
-- `data/raw/` Raw source files used for analysis
-- `data/interim/` Intermediate artifacts created during preprocessing
-- `data/processed/` Analysis-ready modeling tables
-- `data/transcripts/` Transcript files provided by the course or advisor
+This directory stores local datasets and staged artifacts used by the Week 1-4 pipeline.
 
-Do not place sensitive or identifying information in this repository.
+## Expected Local Layout
+- `data/raw_sources/`: original download bundles and archives (local-only)
+- `data/raw/`: extracted or manually prepared source files (local-only)
+- `data/interim/`: temporary transformation artifacts (local-only)
+- `data/processed/`: analysis-ready tables generated locally (local-only)
+- `data/transcripts/`: advisor/course transcript materials (local-only)
+
+## Tracking Policy
+- Raw, restricted, or otherwise sensitive inputs are local-only and must not be committed.
+- Processed tables under `data/processed/` are also ignored by default.
+- Curated grading evidence is stored under `outputs/` and selectively tracked via `.gitignore` allowlist rules.

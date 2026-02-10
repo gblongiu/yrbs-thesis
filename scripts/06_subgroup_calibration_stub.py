@@ -1,8 +1,10 @@
-"""Week 6+ planned scaffold only.
-
-This placeholder exists for future subgroup-disaggregated calibration work.
-No outputs are produced in Week 4 scope.
-"""
+# ============================================================================
+# PLACEHOLDER ONLY (POST-WEEK-4 WORK)
+# - Not executed for Weeks 1-4 deliverables.
+# - Reserves the interface for future subgroup calibration analysis.
+# - Must not write outputs in current scope.
+# ============================================================================
+"""Planned scaffold for future subgroup-disaggregated calibration analysis."""
 
 
 def main() -> None:

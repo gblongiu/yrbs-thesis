@@ -12,7 +12,7 @@ No Week 5+ boosted, ablation, or interpretability completion claims are made in 
 
 ## Run Configuration
 - Command:
-  - `.venv/bin/python scripts/03_train_models.py --model logreg --features baseline --seed 2026 --calibration none --n_boot 0 --outdir outputs`
+  - `python3 scripts/03_train_models.py --model logreg --features baseline --seed 2026 --calibration none --n_boot 0 --outdir outputs`
 - Seed: `2026`
 - Model: `logreg`
 - Feature set: `baseline`

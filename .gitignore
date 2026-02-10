@@ -37,10 +37,9 @@ data/interim/**
 data/transcripts/**
 !data/README.md
 
-# Processed data: ignore by default, allow curated evidence
+# Processed data: local-only, ignore by default
 data/processed/**
 !data/processed/
-!data/processed/yrbs_2023_modeling.parquet
 
 # Outputs: ignore by default, allow curated Week 1-4 evidence
 outputs/**
@@ -80,5 +79,7 @@ outputs/**
 !outputs/figures/qn26_prevalence_by_q1.png
 !outputs/figures/qn26_prevalence_by_raceeth.png
 
-# Status report outputs (ignored per user preference)
+# Status report outputs
 docs/status_reports/report_01/**
+# Local-only audit reports
+docs/week*_audit_report.md
