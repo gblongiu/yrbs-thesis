@@ -1,0 +1,193 @@
+{
+  "binary_recoding": {
+    "QN24": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN24",
+      "yes_values": [
+        1
+      ]
+    },
+    "QN25": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN25",
+      "yes_values": [
+        1
+      ]
+    },
+    "QN26": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN26",
+      "yes_values": [
+        1
+      ]
+    },
+    "QN27": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN27",
+      "yes_values": [
+        1
+      ]
+    },
+    "QN28": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN28",
+      "yes_values": [
+        1
+      ]
+    },
+    "QN29": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN29",
+      "yes_values": [
+        1
+      ]
+    },
+    "QN30": {
+      "missing_values": [
+        7,
+        9,
+        97,
+        99
+      ],
+      "missing_values_seen": [],
+      "no_values": [
+        2
+      ],
+      "observed_values": [
+        1,
+        2
+      ],
+      "rule": "observed_values_subset_of_{1,2}: assume 1=Yes, 2=No",
+      "source_column": "QN30",
+      "yes_values": [
+        1
+      ]
+    }
+  },
+  "columns": {
+    "baseline_covariates": [
+      "q1",
+      "q2",
+      "q3",
+      "raceeth"
+    ],
+    "bullying_exposures": [
+      "QN24",
+      "QN25"
+    ],
+    "secondary_targets": [
+      "QN27",
+      "QN28",
+      "QN29",
+      "QN30"
+    ],
+    "survey_design_cols": [
+      "weight",
+      "stratum",
+      "psu"
+    ],
+    "target_primary": "QN26"
+  },
+  "content_hash_sha256": "00a0bd1c6dccdf6ea3e07ca8e3f36777b64762b91039553abcb774d7a239451c",
+  "input_file": "/Users/gabriellong/PycharmProjects/yrbs-thesis/data/raw/YRBS_2023_MH_subset.xlsx",
+  "missingness_csv": "/Users/gabriellong/PycharmProjects/yrbs-thesis/outputs/tables/missingness_modeling.csv",
+  "modeling_cols": 14,
+  "modeling_rows": 19863,
+  "output_parquet": "/Users/gabriellong/PycharmProjects/yrbs-thesis/data/processed/yrbs_2023_modeling.parquet",
+  "raw_rows": 20103,
+  "row_filters": [
+    {
+      "column": "y_qn26",
+      "dropped_rows": 240,
+      "rule": "drop_missing_outcome"
+    }
+  ],
+  "survey_design_handling": {
+    "modeling_table": "Keep design fields unchanged; do not impute; do not drop rows for missing design fields.",
+    "weighted_descriptives": "Drop rows missing weight/stratum/psu only when producing weighted descriptive tables."
+  }
+}

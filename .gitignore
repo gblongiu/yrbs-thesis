@@ -1,0 +1,84 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Python caches and tooling
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local env files
+.venv/
+venv/
+ENV/
+.env
+.env.*
+.python-version
+
+# Notebook and temp artifacts
+.ipynb_checkpoints/
+*.log
+tmp/
+*.tmp
+
+# Office lock files
+~$*.docx
+
+# Local data artifacts (sensitive/large)
+data/raw/**
+data/raw_sources/**
+data/interim/**
+data/transcripts/**
+!data/README.md
+
+# Processed data: ignore by default, allow curated evidence
+data/processed/**
+!data/processed/
+!data/processed/yrbs_2023_modeling.parquet
+
+# Outputs: ignore by default, allow curated Week 1-4 evidence
+outputs/**
+!outputs/
+!outputs/logs/
+!outputs/logs/environment_check.json
+!outputs/logs/decisions.json
+!outputs/logs/eda_run_metadata.json
+
+!outputs/splits/
+!outputs/splits/holdout_seed2026.npz
+!outputs/splits/cvfolds_seed2026.npz
+
+!outputs/metrics/
+!outputs/metrics/metrics_cv_seed2026_logreg_baseline_none.csv
+!outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv
+
+!outputs/tables/
+!outputs/tables/schema.csv
+!outputs/tables/missingness_summary.csv
+!outputs/tables/modeling_table_audit.csv
+!outputs/tables/missingness_modeling.csv
+!outputs/tables/missingness_eda.csv
+!outputs/tables/unweighted_prevalence_overall.csv
+!outputs/tables/weighted_prevalence_overall.csv
+!outputs/tables/weighted_prevalence_by_q1.csv
+!outputs/tables/weighted_prevalence_by_q2.csv
+!outputs/tables/weighted_prevalence_by_q3.csv
+!outputs/tables/weighted_prevalence_by_raceeth.csv
+!outputs/tables/value_counts_QN24.csv
+!outputs/tables/value_counts_QN25.csv
+!outputs/tables/value_counts_QN26.csv
+
+!outputs/figures/
+!outputs/figures/missingness_bar.png
+!outputs/figures/prevalence_overall_weighted_vs_unweighted.png
+!outputs/figures/qn26_prevalence_by_q1.png
+!outputs/figures/qn26_prevalence_by_raceeth.png
+
+# Status report outputs (ignored per user preference)
+docs/status_reports/report_01/**

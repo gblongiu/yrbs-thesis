@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "/Users/gabriellong/PycharmProjects/yrbs-thesis/scripts/02_eda.py",
+    "--nrows",
+    "2000",
+    "--outdir",
+    "outputs"
+  ],
+  "ci_methods_observed": [
+    "statsmodels_DescrStatsW_tconfint_mean"
+  ],
+  "input_parquet": "/Users/gabriellong/PycharmProjects/yrbs-thesis/data/processed/yrbs_2023_modeling.parquet",
+  "notes": [
+    "EDA is descriptive context only (no predictive modeling).",
+    "Weighted prevalence uses weight-only estimation; CIs are approximate and not design-based."
+  ],
+  "nrows": 2000,
+  "outdir": "outputs",
+  "packages": {
+    "matplotlib": "3.10.8",
+    "numpy": "2.4.2",
+    "pandas": "3.0.0",
+    "pyarrow": "23.0.0",
+    "scikit-learn": "1.8.0",
+    "statsmodels": "0.14.6"
+  },
+  "platform": "macOS-26.2-arm64-arm-64bit-Mach-O",
+  "python_version": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+  "seed": 2026,
+  "timestamp_utc": "2026-02-09T19:42:18.284651+00:00"
+}

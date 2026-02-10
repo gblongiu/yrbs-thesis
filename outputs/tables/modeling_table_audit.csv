@@ -1,0 +1,2 @@
+raw_rows,modeling_rows,modeling_cols,y_qn26_n,y_qn26_n1,y_qn26_n0,y_qn26_rate,missingness_summary_csv,content_hash_sha256,decisions_json
+20103,19863,14,19863,8108,11755,0.408196,/Users/gabriellong/PycharmProjects/yrbs-thesis/outputs/tables/missingness_modeling.csv,00a0bd1c6dccdf6ea3e07ca8e3f36777b64762b91039553abcb774d7a239451c,/Users/gabriellong/PycharmProjects/yrbs-thesis/outputs/logs/decisions.json

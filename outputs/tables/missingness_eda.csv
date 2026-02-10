@@ -1,0 +1,15 @@
+column,dtype,n,n_missing,pct_missing,n_unique
+y_qn26,Int64,2000,0,0.0,2
+y_qn27,Int64,2000,161,8.05,2
+y_qn28,Int64,2000,55,2.75,2
+y_qn29,Int64,2000,31,1.55,2
+y_qn30,Int64,2000,21,1.05,2
+x_qn24,Int64,2000,65,3.25,2
+x_qn25,Int64,2000,31,1.55,2
+q1,category,2000,5,0.25,7
+q2,category,2000,18,0.9,2
+q3,category,2000,50,2.5,5
+raceeth,category,2000,109,5.45,8
+weight,float64,2000,0,0.0,287
+stratum,int64,2000,0,0.0,4
+psu,int64,2000,0,0.0,11

@@ -1,0 +1,4 @@
+group_value,n,weighted_n,y_qn26_weighted_rate,y_qn26_ci95_low_approx,y_qn26_ci95_high_approx,y_qn26_missing_rate,x_qn24_missing_rate,x_qn25_missing_rate
+cat_1,1002,1948.6964,0.521977,0.49978,0.544175,0.0,0.035928,0.020958
+cat_2,980,2173.4024,0.282741,0.263794,0.301689,0.0,0.019388,0.008163
+<NA>,18,48.643,0.420102,0.276298,0.563906,0.0,0.555556,0.111111
