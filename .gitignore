@@ -61,31 +61,38 @@ data/transcripts/
 data/transcripts/**
 !data/README.md
 
-# Processed data: local-only
-data/processed/
+# Processed data: local-only (keep folder marker, ignore contents)
 data/processed/**
-!data/processed/
+!data/processed/.gitkeep
 
 # =========================
 # Outputs (ignore by default; commit curated evidence only)
 # =========================
 outputs/
 outputs/**
+
+# Keep directories so negations can match
 !outputs/
 !outputs/logs/
+!outputs/splits/
+!outputs/metrics/
+!outputs/tables/
+!outputs/figures/
+
+# --- Curated logs (tracked) ---
 !outputs/logs/environment_check.json
 !outputs/logs/decisions.json
 !outputs/logs/eda_run_metadata.json
 
-!outputs/splits/
+# --- Curated splits (tracked) ---
 !outputs/splits/holdout_seed2026.npz
 !outputs/splits/cvfolds_seed2026.npz
 
-!outputs/metrics/
+# --- Curated metrics (tracked) ---
 !outputs/metrics/metrics_cv_seed2026_logreg_baseline_none.csv
 !outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv
 
-!outputs/tables/
+# --- Curated tables (tracked) ---
 !outputs/tables/schema.csv
 !outputs/tables/missingness_summary.csv
 !outputs/tables/modeling_table_audit.csv
@@ -101,11 +108,21 @@ outputs/**
 !outputs/tables/value_counts_QN25.csv
 !outputs/tables/value_counts_QN26.csv
 
-!outputs/figures/
+# --- Curated figures (tracked) ---
 !outputs/figures/missingness_bar.png
 !outputs/figures/prevalence_overall_weighted_vs_unweighted.png
 !outputs/figures/qn26_prevalence_by_q1.png
 !outputs/figures/qn26_prevalence_by_raceeth.png
+
+# Safety: keep heavy / volatile output areas ignored even if created
+outputs/models/
+outputs/models/**
+outputs/cache/
+outputs/cache/**
+outputs/tmp/
+outputs/tmp/**
+outputs/plots/
+outputs/plots/**
 
 # =========================
 # Docs (local-only deliverables)
@@ -113,5 +130,3 @@ outputs/**
 docs/status_reports/
 docs/status_reports/**
 docs/week*_audit_report.md
-# Status report outputs (submission artifacts)
-docs/status_reports/**
