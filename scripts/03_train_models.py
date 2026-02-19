@@ -40,7 +40,7 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, StratifiedShuffleSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -160,21 +160,79 @@ def build_preprocessor(feature_cols: List[str], categorical_cols: List[str]) -> 
     return ColumnTransformer(transformers=transformers, remainder="drop", sparse_threshold=0.0)
 
 
-def build_estimator(model: str, preprocessor: ColumnTransformer, seed: int) -> Pipeline:
+def _default_hgb_params(seed: int) -> Dict[str, object]:
+    return {
+        "learning_rate": 0.05,
+        "max_depth": 6,
+        "max_iter": 400,
+        "early_stopping": True,
+        "random_state": seed,
+    }
+
+
+def build_estimator(
+    model: str, preprocessor: ColumnTransformer, seed: int, hgb_params: Optional[Dict[str, object]] = None
+) -> Pipeline:
     if model == "logreg":
         clf = LogisticRegression(max_iter=5000, solver="lbfgs", class_weight="balanced")
     elif model == "hgb":
-        clf = HistGradientBoostingClassifier(
-            learning_rate=0.05,
-            max_depth=6,
-            max_iter=400,
-            early_stopping=True,
-            random_state=seed,
-        )
+        params = _default_hgb_params(seed)
+        if hgb_params:
+            params.update(hgb_params)
+        # Preserve deterministic training regardless of tuned parameter payload.
+        params["random_state"] = seed
+        clf = HistGradientBoostingClassifier(**params)
     else:
         raise ValueError(f"Unknown model: {model}")
 
     return Pipeline(steps=[("preprocessor", preprocessor), ("model", clf)])
+
+
+def _to_builtin_scalar(v: object) -> object:
+    if isinstance(v, (np.integer, np.floating)):
+        return v.item()
+    if isinstance(v, np.bool_):
+        return bool(v)
+    return v
+
+
+def tune_hgb_on_training_partition(
+    *,
+    estimator: Pipeline,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    seed: int,
+    n_iter: int,
+) -> Tuple[Dict[str, object], pd.DataFrame, float]:
+    cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=seed)
+    param_distributions = {
+        "model__learning_rate": [0.01, 0.03, 0.05, 0.1],
+        "model__max_depth": [3, 4, 5, 6, None],
+        "model__max_iter": [200, 300, 400, 600],
+        "model__min_samples_leaf": [20, 40, 80, 120],
+        "model__l2_regularization": [0.0, 0.01, 0.1, 1.0],
+        "model__max_leaf_nodes": [15, 31, 63, 127],
+    }
+    search = RandomizedSearchCV(
+        estimator=estimator,
+        param_distributions=param_distributions,
+        n_iter=n_iter,
+        scoring="roc_auc",
+        n_jobs=-1,
+        cv=cv,
+        refit=True,
+        random_state=seed,
+        return_train_score=True,
+    )
+    search.fit(X_train, y_train)
+    cv_results = pd.DataFrame(search.cv_results_).sort_values(
+        ["rank_test_score", "mean_test_score"], ascending=[True, False], kind="mergesort"
+    )
+    best_model_params: Dict[str, object] = {}
+    for key, value in search.best_params_.items():
+        if key.startswith("model__"):
+            best_model_params[key.replace("model__", "", 1)] = _to_builtin_scalar(value)
+    return best_model_params, cv_results, float(search.best_score_)
 
 
 def _safe_clip_probs(y_prob: np.ndarray) -> np.ndarray:
@@ -249,9 +307,11 @@ def fold_probabilities_with_optional_calibration(
     y_train: pd.Series,
     seed: int,
     calibration_method: str,
-) -> pd.DataFrame:
+    return_fold_predictions: bool = False,
+) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
     skf = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=seed)
     rows: List[dict] = []
+    pred_rows: List[dict] = []
 
     for fold, (tr_idx, va_idx) in enumerate(skf.split(X_train, y_train), start=1):
         X_tr, y_tr = X_train.iloc[tr_idx], y_train.iloc[tr_idx]
@@ -274,7 +334,34 @@ def fold_probabilities_with_optional_calibration(
             }
         )
 
-    return pd.DataFrame(rows).sort_values("fold", kind="mergesort").reset_index(drop=True)
+        if return_fold_predictions:
+            for idx, yt, p_uncal, p_cal in zip(
+                X_va.index.to_numpy(),
+                y_va.to_numpy(dtype=int),
+                y_prob_raw,
+                y_prob_cal,
+            ):
+                pred_rows.append(
+                    {
+                        "fold": fold,
+                        "row_index": int(idx),
+                        "y_true": int(yt),
+                        "y_prob_uncalibrated": float(p_uncal),
+                        "y_prob_calibrated": float(p_cal),
+                        "calibration_method": calibration_method,
+                    }
+                )
+
+    fold_df = pd.DataFrame(rows).sort_values("fold", kind="mergesort").reset_index(drop=True)
+    if not return_fold_predictions:
+        return fold_df, None
+
+    pred_df = pd.DataFrame(pred_rows).sort_values(["fold", "row_index"], kind="mergesort").reset_index(drop=True)
+    if calibration_method == "none":
+        pred_df["y_prob"] = pred_df["y_prob_uncalibrated"]
+    else:
+        pred_df["y_prob"] = pred_df["y_prob_calibrated"]
+    return fold_df, pred_df
 
 
 def aggregate_fold_metrics(
@@ -634,6 +721,76 @@ def write_metrics_row(path: Path, row: Dict[str, object]) -> None:
     pd.DataFrame([row]).to_csv(path, index=False)
 
 
+def assert_week4_row_order_and_dataset_hash(df: pd.DataFrame, parquet_path: Path, week4_meta_path: Path) -> None:
+    if not week4_meta_path.exists():
+        raise SystemExit(
+            f"Frozen artifact enforcement failed: missing Week 4 run metadata file at {week4_meta_path}."
+        )
+    meta = json.loads(week4_meta_path.read_text(encoding="utf-8"))
+    expected_sha = meta.get("inputs", {}).get("parquet_sha256")
+    if not expected_sha:
+        raise SystemExit(
+            "Frozen artifact enforcement failed: Week 4 metadata does not include inputs.parquet_sha256."
+        )
+    current_sha = sha256_file(parquet_path)
+    if current_sha != expected_sha:
+        raise SystemExit(
+            "Frozen artifact enforcement failed: current parquet SHA does not match Week 4 parquet SHA. "
+            "Dataset content or row ordering changed."
+        )
+    idx = df.index.to_numpy()
+    expected_idx = np.arange(len(df))
+    if not np.array_equal(idx, expected_idx):
+        raise SystemExit(
+            "Frozen artifact enforcement failed: DataFrame index ordering is not stable 0..n-1. "
+            "Row ordering differs from the Week 4 assumptions."
+        )
+
+
+def enforce_frozen_split_artifacts(
+    *,
+    holdout_path: Path,
+    cvfolds_path: Path,
+    train_idx_recomputed: np.ndarray,
+    test_idx_recomputed: np.ndarray,
+    fold_id_recomputed: np.ndarray,
+    dataset_n: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if not holdout_path.exists():
+        raise SystemExit(f"Frozen artifact enforcement failed: missing required holdout file {holdout_path}.")
+    if not cvfolds_path.exists():
+        raise SystemExit(f"Frozen artifact enforcement failed: missing required cv folds file {cvfolds_path}.")
+
+    holdout = np.load(holdout_path)
+    train_idx_existing = holdout["train_idx"]
+    test_idx_existing = holdout["test_idx"]
+    if (len(train_idx_existing) + len(test_idx_existing)) != dataset_n:
+        raise SystemExit(
+            "Frozen artifact enforcement failed: holdout artifact row counts do not match current dataset length."
+        )
+    if not np.array_equal(train_idx_existing, train_idx_recomputed):
+        raise SystemExit(
+            "Frozen artifact enforcement failed: recomputed train_idx differs from frozen holdout train_idx."
+        )
+    if not np.array_equal(test_idx_existing, test_idx_recomputed):
+        raise SystemExit(
+            "Frozen artifact enforcement failed: recomputed test_idx differs from frozen holdout test_idx."
+        )
+
+    cv = np.load(cvfolds_path)
+    train_idx_cv_existing = cv["train_idx"]
+    fold_id_existing = cv["fold_id"]
+    if not np.array_equal(train_idx_cv_existing, train_idx_recomputed):
+        raise SystemExit(
+            "Frozen artifact enforcement failed: recomputed train_idx differs from frozen cvfolds train_idx."
+        )
+    if not np.array_equal(fold_id_existing, fold_id_recomputed):
+        raise SystemExit(
+            "Frozen artifact enforcement failed: recomputed fold_id differs from frozen cvfolds fold_id."
+        )
+    return train_idx_existing, test_idx_existing, fold_id_existing
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Week 4 modeling + evaluation (unweighted predictive protocol).")
     parser.add_argument("--seed", type=int, default=2026, help="Random seed for holdout split and CV folds.")
@@ -660,6 +817,45 @@ def main() -> None:
         default=1000,
         help="Number of stratified bootstrap resamples for test-set confidence intervals.",
     )
+    parser.add_argument(
+        "--tune_hgb",
+        "--tune-hgb",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="Enable HGB hyperparameter tuning with RandomizedSearchCV (default: 0/off).",
+    )
+    parser.add_argument(
+        "--hgb_search_iter",
+        "--hgb-search-iter",
+        type=int,
+        default=12,
+        help="Number of RandomizedSearchCV iterations for HGB tuning (default: 12).",
+    )
+    parser.add_argument(
+        "--save_cv_preds",
+        "--save-cv-preds",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="Save CV fold-level prediction probabilities to outputs/tables (default: 0/off).",
+    )
+    parser.add_argument(
+        "--enforce_frozen_artifacts",
+        "--enforce-frozen-artifacts",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="Hard-fail if recomputed splits/folds differ from existing frozen seed artifacts (default: 0/off).",
+    )
+    parser.add_argument(
+        "--week5_artifacts_only",
+        "--week5-artifacts-only",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="Week 5 mode: skip logs/models/aggregate summaries and write only metrics/tables/figures/tuning.",
+    )
     args = parser.parse_args()
 
     if (not args.allow_any_seed) and (args.seed not in RANDOM_SEEDS):
@@ -671,6 +867,12 @@ def main() -> None:
         raise SystemExit("--calibration-final-strategy must be one of: cv_stacking, train_split.")
     if args.n_boot < 0:
         raise SystemExit("--n_boot must be >= 0.")
+    if args.hgb_search_iter <= 0:
+        raise SystemExit("--hgb_search_iter must be a positive integer.")
+    if args.enforce_frozen_artifacts and args.nrows is not None:
+        raise SystemExit("--enforce_frozen_artifacts requires full dataset ordering and cannot be used with --nrows.")
+    if args.enforce_frozen_artifacts and args.seed != 2026:
+        raise SystemExit("--enforce_frozen_artifacts currently supports only seed 2026 frozen protocol checks.")
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -720,13 +922,6 @@ def main() -> None:
     # Defensive: eliminate pd.NA anywhere (e.g., nullable integers) to keep sklearn imputers happy.
     X = X.replace({pd.NA: np.nan})
 
-    # Frozen holdout split (unweighted predictive evaluation)
-    splitter = StratifiedShuffleSplit(n_splits=1, test_size=TEST_SIZE, random_state=args.seed)
-    (train_pos, test_pos) = next(splitter.split(X, y))
-    row_index = df.index.to_numpy()
-    train_idx = row_index[train_pos]
-    test_idx = row_index[test_pos]
-
     outdir = args.outdir
     out_metrics = outdir / "metrics"
     out_tables = outdir / "tables"
@@ -734,27 +929,57 @@ def main() -> None:
     out_models = outdir / "models"
     out_splits = outdir / "splits"
     out_logs = outdir / "logs"
+    out_tuning = outdir / "tuning"
 
-    for d in [out_metrics, out_tables, out_figures, out_models, out_splits, out_logs]:
+    dirs_to_create = [out_metrics, out_tables, out_figures, out_splits]
+    if args.tune_hgb == 1:
+        dirs_to_create.append(out_tuning)
+    if args.week5_artifacts_only == 0:
+        dirs_to_create.extend([out_models, out_logs])
+    for d in dirs_to_create:
         d.mkdir(parents=True, exist_ok=True)
 
-    save_npz(out_splits / f"holdout_seed{args.seed}.npz", train_idx=train_idx, test_idx=test_idx)
+    parquet_sha = sha256_file(parquet_path)
+
+    # Frozen holdout split and fold assignment recomputation.
+    splitter = StratifiedShuffleSplit(n_splits=1, test_size=TEST_SIZE, random_state=args.seed)
+    (train_pos, test_pos) = next(splitter.split(X, y))
+    row_index = df.index.to_numpy()
+    train_idx_recomputed = row_index[train_pos]
+    test_idx_recomputed = row_index[test_pos]
 
     # CV fold assignments for the training portion only (saved as train_idx + fold_id).
+    X_train_recomputed = X.loc[train_idx_recomputed]
+    y_train_recomputed = y.loc[train_idx_recomputed]
+
+    skf = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=args.seed)
+    fold_id_recomputed = np.full(len(train_idx_recomputed), fill_value=-1, dtype=int)
+    for f, (_, va) in enumerate(skf.split(X_train_recomputed, y_train_recomputed)):
+        fold_id_recomputed[va] = f
+    if (fold_id_recomputed < 0).any():
+        raise RuntimeError("Failed to assign all training rows to CV folds.")
+
+    if args.enforce_frozen_artifacts == 1:
+        week4_meta_path = outdir / "logs" / "run_week04_models_v1_seed2026_logreg_baseline_none.json"
+        assert_week4_row_order_and_dataset_hash(df, parquet_path, week4_meta_path)
+        train_idx, test_idx, fold_id = enforce_frozen_split_artifacts(
+            holdout_path=out_splits / f"holdout_seed{args.seed}.npz",
+            cvfolds_path=out_splits / f"cvfolds_seed{args.seed}.npz",
+            train_idx_recomputed=train_idx_recomputed,
+            test_idx_recomputed=test_idx_recomputed,
+            fold_id_recomputed=fold_id_recomputed,
+            dataset_n=len(df),
+        )
+    else:
+        train_idx, test_idx, fold_id = train_idx_recomputed, test_idx_recomputed, fold_id_recomputed
+        save_npz(out_splits / f"holdout_seed{args.seed}.npz", train_idx=train_idx, test_idx=test_idx)
+        save_npz(out_splits / f"cvfolds_seed{args.seed}.npz", train_idx=train_idx, fold_id=fold_id)
+
     X_train = X.loc[train_idx]
     y_train = y.loc[train_idx]
     X_test = X.loc[test_idx]
     y_test = y.loc[test_idx]
 
-    skf = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=args.seed)
-    fold_id = np.full(len(train_idx), fill_value=-1, dtype=int)
-    for f, (_, va) in enumerate(skf.split(X_train, y_train)):
-        fold_id[va] = f
-    if (fold_id < 0).any():
-        raise RuntimeError("Failed to assign all training rows to CV folds.")
-    save_npz(out_splits / f"cvfolds_seed{args.seed}.npz", train_idx=train_idx, fold_id=fold_id)
-
-    parquet_sha = sha256_file(parquet_path)
     requirements_path = PROJECT_ROOT / "requirements.txt"
     requirements_sha = sha256_file(requirements_path) if requirements_path.exists() else ""
     git_commit = resolve_git_commit(PROJECT_ROOT)
@@ -779,21 +1004,61 @@ def main() -> None:
             # Avoid collisions when a single --run-id is provided with --model both.
             run_id = f"{args.run_id}_{model_name}"
 
+        hgb_params_for_model: Optional[Dict[str, object]] = None
+        if model_name == "hgb" and args.tune_hgb == 1:
+            pre_for_tune = build_preprocessor(list(feature_cols), categorical_covariates)
+            est_for_tune = build_estimator("hgb", preprocessor=pre_for_tune, seed=args.seed)
+            hgb_params_for_model, tuning_results_df, best_cv_score = tune_hgb_on_training_partition(
+                estimator=est_for_tune,
+                X_train=X_train,
+                y_train=y_train,
+                seed=args.seed,
+                n_iter=args.hgb_search_iter,
+            )
+            tuning_results_path = out_tuning / f"hgb_seed{args.seed}_{featureset}_search_results.csv"
+            tuning_results_df.to_csv(tuning_results_path, index=False)
+            best_params_path = out_tuning / f"hgb_seed{args.seed}_{featureset}_best_params.json"
+            best_payload = {
+                "dataset_version": DATASET_VERSION,
+                "run_id": run_id,
+                "seed": args.seed,
+                "model": model_name,
+                "featureset": featureset,
+                "scoring": "roc_auc",
+                "n_iter": args.hgb_search_iter,
+                "best_cv_score_roc_auc": best_cv_score,
+                "best_params": hgb_params_for_model,
+                "search_results_csv": str(tuning_results_path),
+            }
+            best_params_path.write_text(json.dumps(best_payload, indent=2, sort_keys=True), encoding="utf-8")
+
         def estimator_factory():
             pre = build_preprocessor(list(feature_cols), categorical_covariates)
-            return build_estimator(model_name, preprocessor=pre, seed=args.seed)
+            return build_estimator(model_name, preprocessor=pre, seed=args.seed, hgb_params=hgb_params_for_model)
 
         # CV metrics on training portion only.
-        cv_fold_df = fold_probabilities_with_optional_calibration(
+        cv_fold_df, cv_pred_df = fold_probabilities_with_optional_calibration(
             estimator_factory=estimator_factory,
             X_train=X_train,
             y_train=y_train,
             seed=args.seed,
             calibration_method=args.calibration,
+            return_fold_predictions=bool(args.save_cv_preds),
         )
         cv_means, cv_stds, cv_legacy = aggregate_fold_metrics(cv_fold_df, calibration_method=args.calibration)
         cv_fold_path = out_metrics / f"metrics_cv_folds_seed{args.seed}_{model_name}_{featureset}_{args.calibration}.csv"
         cv_fold_df.to_csv(cv_fold_path, index=False)
+        cv_preds_path: Optional[Path] = None
+        if args.save_cv_preds == 1 and cv_pred_df is not None:
+            cv_pred_df.insert(0, "dataset_version", DATASET_VERSION)
+            cv_pred_df.insert(1, "run_id", run_id)
+            cv_pred_df.insert(2, "seed", args.seed)
+            cv_pred_df.insert(3, "model", model_name)
+            cv_pred_df.insert(4, "featureset", featureset)
+            cv_preds_path = (
+                out_tables / f"preds_cv_folds_seed{args.seed}_{model_name}_{featureset}_{args.calibration}.csv"
+            )
+            cv_pred_df.to_csv(cv_preds_path, index=False)
 
         cv_row = {
             "dataset_version": DATASET_VERSION,
@@ -842,13 +1107,15 @@ def main() -> None:
             )
             calibrator_strategy = "train_split_holdout"
 
-        # Save model artifact (joblib)
-        model_path = out_models / f"{model_name}_{featureset}_seed{args.seed}.joblib"
-        joblib.dump(final_est, model_path)
+        # Save model artifact (joblib) unless restricted to Week 5 outputs.
+        model_path: Optional[Path] = None
         calibrator_path: Optional[Path] = None
-        if calibrator is not None:
-            calibrator_path = out_models / f"{model_name}_{featureset}_seed{args.seed}.calibrator.joblib"
-            joblib.dump(calibrator, calibrator_path)
+        if args.week5_artifacts_only == 0:
+            model_path = out_models / f"{model_name}_{featureset}_seed{args.seed}.joblib"
+            joblib.dump(final_est, model_path)
+            if calibrator is not None:
+                calibrator_path = out_models / f"{model_name}_{featureset}_seed{args.seed}.calibrator.joblib"
+                joblib.dump(calibrator, calibrator_path)
 
         y_prob_uncal = predict_proba_positive(final_est, X_test)
         y_prob_cal = apply_posthoc_calibrator(calibrator, y_prob_uncal)
@@ -979,94 +1246,97 @@ def main() -> None:
         y_train_hash = sha256_np_array(y_train.to_numpy(dtype=np.int64))
         y_test_hash = sha256_np_array(y_test.to_numpy(dtype=np.int64))
 
-        # Model metadata JSON
-        meta = {
-            "dataset_version": DATASET_VERSION,
-            "experiment_namespace": EXPERIMENT_NAMESPACE,
-            "run_id": run_id,
-            "seed": args.seed,
-            "model": model_name,
-            "featureset": featureset,
-            "feature_cols": list(feature_cols),
-            "calibration_method": args.calibration,
-            "calibrator_training_strategy": calibrator_strategy,
-            "calibration_cv_mode": "fold_validation_fit_and_eval",
-            "calibration_training_data_scope": "train_only",
-            "target_col": TARGET_COL,
-            "positive_label": POSITIVE_LABEL,
-            "validation_protocol": {"test_size": TEST_SIZE, "cv_folds": CV_FOLDS, "random_seed": args.seed},
-            "inputs": {
-                "parquet_path": str(parquet_path),
-                "parquet_sha256": parquet_sha,
-                "nrows": args.nrows,
-                "requirements_path": str(requirements_path),
-                "requirements_sha256": requirements_sha,
-                "feature_cols_sha256": feature_cols_hash,
-                "train_index_sha256": train_idx_hash,
-                "test_index_sha256": test_idx_hash,
-                "y_train_sha256": y_train_hash,
-                "y_test_sha256": y_test_hash,
-            },
-            "artifacts": {
-                "model_joblib": str(model_path),
-                "calibrator_joblib": str(calibrator_path) if calibrator_path is not None else None,
-                "metrics_cv_csv": str(cv_path),
-                "metrics_cv_folds_csv": str(cv_fold_path),
-                "metrics_test_csv": str(test_path),
-                "primary_metrics_with_ci_csv": str(out_tables / "primary_metrics_with_ci.csv"),
-                "bootstrap_draws_test_csv": str(
-                    out_tables / f"bootstrap_draws_test_seed{args.seed}_{model_name}_{featureset}_{args.calibration}.csv"
-                ),
-                "preds_test_csv": str(preds_path),
-                "error_slices_csv": str(error_path),
-                "holdout_split_npz": str(out_splits / f"holdout_seed{args.seed}.npz"),
-                "cvfolds_npz": str(out_splits / f"cvfolds_seed{args.seed}.npz"),
-                "logreg_coefficients_csv": coef_path,
-                "calibration_curve_uncalibrated_csv": str(
-                    out_tables
-                    / f"calibration_curve_test_uncalibrated_{model_name}_{featureset}_seed{args.seed}_{args.calibration}.csv"
-                ),
-                "calibration_curve_calibrated_csv": str(
-                    out_tables
-                    / f"calibration_curve_test_calibrated_{model_name}_{featureset}_seed{args.seed}_{args.calibration}.csv"
-                ),
-            },
-            "error_slices": {
-                "min_group_n": MIN_GROUP_N,
-                "min_group_pos": MIN_GROUP_POS,
-                "min_group_neg": MIN_GROUP_NEG,
-                "omitted_groups": omitted_groups,
-            },
-            "runtime": {
-                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                "python_version": sys.version,
-                "platform": platform.platform(),
-                "argv": sys.argv,
-                "packages": pkg_versions,
-                "git_commit": git_commit,
-                "package_lock_sha256": requirements_sha,
-                "n_boot_requested": int(args.n_boot),
-                "n_boot_effective": int(n_boot_effective),
-            },
-            "scope_notes": [
-                "Predictive evaluation is unweighted (no survey design adjustment in metrics).",
-                "Weighted prevalence summaries are handled separately in the EDA pipeline.",
-                "Results are predictive associations only; no causal interpretation.",
-            ],
-        }
+        if args.week5_artifacts_only == 0:
+            # Model metadata JSON
+            meta = {
+                "dataset_version": DATASET_VERSION,
+                "experiment_namespace": EXPERIMENT_NAMESPACE,
+                "run_id": run_id,
+                "seed": args.seed,
+                "model": model_name,
+                "featureset": featureset,
+                "feature_cols": list(feature_cols),
+                "calibration_method": args.calibration,
+                "calibrator_training_strategy": calibrator_strategy,
+                "calibration_cv_mode": "fold_validation_fit_and_eval",
+                "calibration_training_data_scope": "train_only",
+                "target_col": TARGET_COL,
+                "positive_label": POSITIVE_LABEL,
+                "validation_protocol": {"test_size": TEST_SIZE, "cv_folds": CV_FOLDS, "random_seed": args.seed},
+                "inputs": {
+                    "parquet_path": str(parquet_path),
+                    "parquet_sha256": parquet_sha,
+                    "nrows": args.nrows,
+                    "requirements_path": str(requirements_path),
+                    "requirements_sha256": requirements_sha,
+                    "feature_cols_sha256": feature_cols_hash,
+                    "train_index_sha256": train_idx_hash,
+                    "test_index_sha256": test_idx_hash,
+                    "y_train_sha256": y_train_hash,
+                    "y_test_sha256": y_test_hash,
+                },
+                "artifacts": {
+                    "model_joblib": str(model_path) if model_path is not None else None,
+                    "calibrator_joblib": str(calibrator_path) if calibrator_path is not None else None,
+                    "metrics_cv_csv": str(cv_path),
+                    "metrics_cv_folds_csv": str(cv_fold_path),
+                    "preds_cv_folds_csv": str(cv_preds_path) if cv_preds_path is not None else None,
+                    "metrics_test_csv": str(test_path),
+                    "primary_metrics_with_ci_csv": str(out_tables / "primary_metrics_with_ci.csv"),
+                    "bootstrap_draws_test_csv": str(
+                        out_tables / f"bootstrap_draws_test_seed{args.seed}_{model_name}_{featureset}_{args.calibration}.csv"
+                    ),
+                    "preds_test_csv": str(preds_path),
+                    "error_slices_csv": str(error_path),
+                    "holdout_split_npz": str(out_splits / f"holdout_seed{args.seed}.npz"),
+                    "cvfolds_npz": str(out_splits / f"cvfolds_seed{args.seed}.npz"),
+                    "logreg_coefficients_csv": coef_path,
+                    "calibration_curve_uncalibrated_csv": str(
+                        out_tables
+                        / f"calibration_curve_test_uncalibrated_{model_name}_{featureset}_seed{args.seed}_{args.calibration}.csv"
+                    ),
+                    "calibration_curve_calibrated_csv": str(
+                        out_tables
+                        / f"calibration_curve_test_calibrated_{model_name}_{featureset}_seed{args.seed}_{args.calibration}.csv"
+                    ),
+                },
+                "error_slices": {
+                    "min_group_n": MIN_GROUP_N,
+                    "min_group_pos": MIN_GROUP_POS,
+                    "min_group_neg": MIN_GROUP_NEG,
+                    "omitted_groups": omitted_groups,
+                },
+                "runtime": {
+                    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                    "python_version": sys.version,
+                    "platform": platform.platform(),
+                    "argv": sys.argv,
+                    "packages": pkg_versions,
+                    "git_commit": git_commit,
+                    "package_lock_sha256": requirements_sha,
+                    "n_boot_requested": int(args.n_boot),
+                    "n_boot_effective": int(n_boot_effective),
+                },
+                "scope_notes": [
+                    "Predictive evaluation is unweighted (no survey design adjustment in metrics).",
+                    "Weighted prevalence summaries are handled separately in the EDA pipeline.",
+                    "Results are predictive associations only; no causal interpretation.",
+                ],
+            }
 
-        meta_path = out_models / f"{model_name}_{featureset}_seed{args.seed}.meta.json"
-        meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
+            meta_path = out_models / f"{model_name}_{featureset}_seed{args.seed}.meta.json"
+            meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
 
-        # Compact run-level log pointer (optional but useful)
-        (out_logs / f"run_{run_id}.json").write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
+            # Compact run-level log pointer (optional but useful)
+            (out_logs / f"run_{run_id}.json").write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
 
-    # Thesis-ready summary tables (one row per model/featureset for this run)
-    results_test = pd.DataFrame(summary_test_rows)
-    results_cv = pd.DataFrame(summary_cv_rows)
-    results_test.to_csv(out_tables / "results_summary_test.csv", index=False)
-    results_cv.to_csv(out_tables / "results_summary_cv.csv", index=False)
-    pd.DataFrame(primary_ci_rows).to_csv(out_tables / "primary_metrics_with_ci.csv", index=False)
+    # Thesis-ready summary tables (one row per model/featureset for this run).
+    if args.week5_artifacts_only == 0:
+        results_test = pd.DataFrame(summary_test_rows)
+        results_cv = pd.DataFrame(summary_cv_rows)
+        results_test.to_csv(out_tables / "results_summary_test.csv", index=False)
+        results_cv.to_csv(out_tables / "results_summary_cv.csv", index=False)
+        pd.DataFrame(primary_ci_rows).to_csv(out_tables / "primary_metrics_with_ci.csv", index=False)
 
     print(f"Wrote modeling artifacts to {outdir}/")
 

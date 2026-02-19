@@ -1,8 +1,8 @@
 # Decisions Log (Performed vs Planned)
 
-This register tracks Week 1-4 implemented decisions and future planned decisions.
+This register tracks Week 1-5 implemented decisions and future planned decisions.
 
-## PERFORMED Decisions (Weeks 1-4)
+## PERFORMED Decisions (Weeks 1-5)
 
 ## D001 (PERFORMED) | 2026-01-16 | Week 1
 - Decision: Primary target locked to `QN26` / `y_qn26`.
@@ -95,9 +95,29 @@ This register tracks Week 1-4 implemented decisions and future planned decisions
   - `outputs/tables/weighted_prevalence_overall.csv`
   - `outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv`
 
-## PLANNED Decisions (Week 5+)
-- Planned: boosted-model tuning and comparison policy (Week 5).
-- Planned: ablation and interpretability decision package (Week 6).
+## D012 (PERFORMED) | 2026-02-18 | Week 5
+- Decision: Week 5 scope is baseline feature set only for tuned boosted model comparison.
+- Rationale: Baseline-only scope keeps the frozen protocol comparison direct against Week 4 and keeps Week 5 effort focused on tuning, calibration checks, and stability diagnostics without mixing in Week 6 ablation objectives.
+- Evidence:
+  - `outputs/metrics/metrics_cv_seed2026_hgb_baseline_none.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_baseline_none.csv`
+  - `outputs/tables/week05_calibration_comparison_seed2026.csv`
+
+## D013 (PERFORMED) | 2026-02-18 | Week 5
+- Decision: Defer alternative calibration methods and broader baseline variants to Week 6+.
+- Rationale: Week 5 primary comparison holds calibration mode at `none` to isolate model-family change from calibration-method effects. Platt and isotonic were considered and deferred. Alternative baseline variants and larger tuning budgets were also considered but deferred to avoid timeline risk and to preserve interpretability of the Week 5 comparison.
+- Week 6 plan:
+  - run full-feature comparison under the same frozen protocol
+  - run bullying-block ablation after full-feature results
+  - assess post-hoc calibration methods (`platt`, `isotonic`) as follow-up sensitivity
+- Evidence:
+  - `outputs/tuning/hgb_seed2026_baseline_search_results.csv`
+  - `outputs/tuning/hgb_seed2026_baseline_best_params.json`
+  - `docs/experiment_log.md`
+
+## PLANNED Decisions (Week 6+)
+- Planned: full-feature comparison and bullying-block ablation package (Week 6).
+- Planned: final model selection and robustness package (Week 7).
 - Planned: sensitivity and claim-audit policy for submission readiness (Week 8+).
 
 Planned document anchor:

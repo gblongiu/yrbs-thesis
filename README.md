@@ -12,24 +12,25 @@ Scope guardrails:
 - No individual screening or diagnostic use
 
 ## Project Status
-Implemented now (Weeks 1-4):
-- Week 1: question/scope/reproducibility setup complete
+Implemented now (Weeks 1-5):
+- Week 1: question, scope, and reproducibility setup complete
 - Week 2: analysis-ready dataset and data dictionary complete
 - Week 3: descriptive EDA tables and figures complete
 - Week 4: baseline logistic model under frozen validation protocol complete
+- Week 5: tuned HGB comparison, calibration diagnostics, and stability diagnostics complete
 
-Planned later (Weeks 5-10):
-- Sensitivity, calibration, and extension analyses are documented as planned-only and not executed in current scope.
+Planned later (Weeks 6-10):
+- Full-feature comparison, ablation, and final paper and submission packaging remain planned.
 
 ## Data
 Primary local inputs:
 - `data/raw/YRBS_2023_MH_subset.xlsx`
-- `data/raw/YRBS_2023_Combined_MH_subset.xlsx` (context/trend file)
+- `data/raw/YRBS_2023_Combined_MH_subset.xlsx` (context and trend file)
 
 Core local analysis-ready table:
 - `data/processed/yrbs_2023_modeling.parquet`
 
-## Week 1-4 Pipeline Commands
+## Week 1-5 Core Pipeline Commands
 Run from repository root.
 
 1. Create environment and install dependencies.
@@ -45,12 +46,12 @@ python3 scripts/00_validate_environment.py
 python3 scripts/00_schema_audit.py
 ```
 
-3. Build modeling table (Week 2).
+3. Build modeling table.
 ```bash
 python3 scripts/01_build_dataset.py
 ```
 
-4. Run EDA (Week 3).
+4. Run EDA.
 ```bash
 python3 scripts/02_eda.py --outdir outputs
 ```
@@ -66,23 +67,44 @@ python3 scripts/03_train_models.py \
   --outdir outputs
 ```
 
-## Week 4 Required Outputs
-- `outputs/splits/holdout_seed2026.npz`
-- `outputs/splits/cvfolds_seed2026.npz`
-- `outputs/metrics/metrics_cv_seed2026_logreg_baseline_none.csv`
-- `outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv`
-- `docs/modeling_report.md`
+6. Run Week 5 tuned HGB model under frozen protocol.
+```bash
+python3 scripts/03_train_models.py \
+  --model hgb \
+  --features baseline \
+  --seed 2026 \
+  --calibration none \
+  --n_boot 0 \
+  --outdir outputs \
+  --run-id week05_models_v1_seed2026_hgb_baseline_none \
+  --tune_hgb 1 \
+  --hgb_search_iter 12 \
+  --save_cv_preds 1 \
+  --enforce_frozen_artifacts 1 \
+  --week5_artifacts_only 1
+```
 
-## Dependency Locking (Optional)
-- `requirements.txt` remains the direct dependency list for normal setup.
-- For exact local reproducibility, an optional lock snapshot can be generated from a known-good environment:
+7. Run Week 5 diagnostics.
 ```bash
-python3 -m pip freeze > requirements-lock.txt
+python3 scripts/04_week05_diagnostics.py \
+  --model hgb \
+  --baseline-model logreg \
+  --features baseline \
+  --seed 2026 \
+  --calibration none \
+  --outdir outputs
 ```
-- The exact environment can then be recreated with:
-```bash
-python3 -m pip install -r requirements-lock.txt
-```
+
+## Navigation for Reviewers
+Use these paths to locate evidence quickly:
+- Metrics: `outputs/metrics/`
+- Tuning outputs: `outputs/tuning/`
+- Tables and comparison outputs: `outputs/tables/`
+- Figures and diagnostics: `outputs/figures/`
+- Status reports: `docs/status_reports/`
+- Experiment log: `docs/experiment_log.md`
+- Decisions log: `docs/decisions_log.md`
+- Modeling report: `docs/modeling_report.md`
 
 ## Key Documentation
 - `docs/project_plan.md`
@@ -93,13 +115,12 @@ python3 -m pip install -r requirements-lock.txt
 - `docs/decisions_log.md`
 - `docs/experiment_log.md`
 - `docs/modeling_report.md`
-- `docs/week04_audit_report.md`
-- `docs/ablation_report.md` (planned placeholder)
+- `docs/reproducibility_checklist.md`
 
 ## Repository Layout
 - `data/` local datasets and staged artifacts
-- `docs/` planning, logs, and reports
-- `outputs/` generated artifacts (tables/figures/metrics/models/splits/logs)
+- `docs/` plans, logs, reports, and submission artifacts
+- `outputs/` generated artifacts (tables, figures, metrics, tuning, models, splits, logs)
 - `scripts/` executable pipeline entrypoints
 - `src/` reusable project code
 - `tests/` smoke tests

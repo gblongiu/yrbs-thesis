@@ -1,10 +1,10 @@
 # Experiment Log (Performed vs Planned)
 
-Status checkpoint (recorded 2026-02-09):
-- Weeks 1-4 deliverables complete.
-- Weeks 5-10 planned and not executed.
+Status checkpoint (recorded 2026-02-18):
+- Weeks 1-5 deliverables complete.
+- Weeks 6-10 planned and not executed.
 
-## PERFORMED (Weeks 1-4)
+## PERFORMED (Weeks 1-5)
 
 ## (PERFORMED) | 2026-02-09 | Week 1 | Environment validation
 - What ran: `python3 scripts/00_validate_environment.py`
@@ -55,15 +55,46 @@ Status checkpoint (recorded 2026-02-09):
   - `outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv`
   - `docs/modeling_report.md`
 
-## PLANNED (Weeks 5-10, not executed)
+## (PERFORMED) | 2026-02-18 | Week 5 | HGB tuning on frozen protocol training partition
+- Date: `2026-02-18`
+- Run ID: `week05_models_v1_seed2026_hgb_baseline_none`
+- Git commit at run start: `d4cce49`
+- Command used:
+  - `.venv/bin/python scripts/03_train_models.py --model hgb --features baseline --seed 2026 --calibration none --n_boot 0 --outdir outputs --run-id week05_models_v1_seed2026_hgb_baseline_none --tune_hgb 1 --hgb_search_iter 12 --save_cv_preds 1 --enforce_frozen_artifacts 1 --week5_artifacts_only 1`
+- Primary artifacts produced:
+  - `outputs/tuning/hgb_seed2026_baseline_search_results.csv`
+  - `outputs/tuning/hgb_seed2026_baseline_best_params.json`
+- Interpretation:
+  - The tuning search selected a conservative boosted configuration with `learning_rate=0.01`, `max_depth=5`, `max_iter=600`, `min_samples_leaf=120`, `max_leaf_nodes=15`, and `l2_regularization=0.01`.
+  - The best cross-validation ROC AUC for the search was `0.650538`, which is near the Week 4 baseline ROC AUC mean and indicates limited rank-order gain but stable optimization under the frozen protocol.
 
-- Week 5: boosted-model tuning and metric comparison.
-- Week 6: ablation and interpretability package.
+## (PERFORMED) | 2026-02-18 | Week 5 | Final tuned HGB evaluation and diagnostics
+- Date: `2026-02-18`
+- Run ID: `week05_models_v1_seed2026_hgb_baseline_none`
+- Git commit at run start: `d4cce49`
+- Commands used:
+  - `.venv/bin/python scripts/03_train_models.py --model hgb --features baseline --seed 2026 --calibration none --n_boot 0 --outdir outputs --run-id week05_models_v1_seed2026_hgb_baseline_none --tune_hgb 1 --hgb_search_iter 12 --save_cv_preds 1 --enforce_frozen_artifacts 1 --week5_artifacts_only 1`
+  - `.venv/bin/python scripts/04_week05_diagnostics.py --model hgb --baseline-model logreg --features baseline --seed 2026 --calibration none --outdir outputs`
+- Primary artifacts produced:
+  - `outputs/metrics/metrics_cv_seed2026_hgb_baseline_none.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_baseline_none.csv`
+  - `outputs/metrics/metrics_cv_folds_seed2026_hgb_baseline_none.csv`
+  - `outputs/tables/week05_calibration_comparison_seed2026.csv`
+  - `outputs/figures/week05_calibration_comparison_seed2026.png`
+  - `outputs/tables/hgb_seed2026_baseline_perm_importance_by_fold.csv`
+  - `outputs/tables/hgb_seed2026_baseline_perm_importance_summary.csv`
+  - `outputs/figures/hgb_seed2026_baseline_importance_stability.png`
+- Interpretation:
+  - On held-out test data, HGB improved Brier (`0.225224` vs `0.231985`) and slightly improved ROC AUC (`0.650200` vs `0.649822`) relative to the Week 4 baseline, while PR AUC decreased (`0.537872` vs `0.547476`).
+  - Calibration intercept moved from `-0.363811` to `0.036123`, while calibration slope increased from `0.987174` to `1.071831`, indicating less systematic underprediction but steeper probability scaling.
+
+## PLANNED (Weeks 6-10)
+
+- Week 6: full-feature comparison and bullying-block ablation.
 - Week 7: final model selection package.
 - Week 8: first full paper draft and reproducibility appendix.
 - Week 9: revision and presentation plan.
 - Week 10: final submission bundle.
-- Planned: weighted-fit sensitivity check for baseline logistic model. Not executed in Week 4.
 
 Planned anchor document:
 - `docs/ablation_report.md`

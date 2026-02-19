@@ -221,6 +221,10 @@ def _weighted_prevalence_by_group(
 
 
 def _write_run_metadata(logs_dir: Path, payload: dict) -> None:
+    if os.getenv("YRBS_THESIS_DISABLE_RUN_METADATA") == "1":
+        return
+    if os.getenv("PYTEST_CURRENT_TEST") is not None:
+        return
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_path = logs_dir / "eda_run_metadata.json"
     out_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
