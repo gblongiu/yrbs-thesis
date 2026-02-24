@@ -11,16 +11,18 @@ Scope guardrails:
 - No causal claims
 - No individual screening or diagnostic use
 
-## Project Status
-Implemented now (Weeks 1-5):
-- Week 1: question, scope, and reproducibility setup complete
-- Week 2: analysis-ready dataset and data dictionary complete
-- Week 3: descriptive EDA tables and figures complete
-- Week 4: baseline logistic model under frozen validation protocol complete
-- Week 5: tuned HGB comparison, calibration diagnostics, and stability diagnostics complete
+## Current Project Status
+- Weeks 1 to 6 are complete under the frozen validation protocol, including full-feature comparison, bullying ablation, calibration sensitivity, and Week 6 stability diagnostics. Evidence: `outputs/tables/week06_full_feature_comparison_seed2026.csv`, `outputs/tables/week06_bullying_ablation_comparison_seed2026.csv`, `outputs/tables/week06_calibration_sensitivity_seed2026.csv`, `outputs/tables/hgb_seed2026_full_perm_importance_summary.csv`.
+- Selected Week 7 robustness and governance tasks are complete ahead of schedule with additive outputs only. Evidence: `scripts/09_multiseed_stability.py`, `scripts/10_bootstrap_ci.py`, `scripts/11_hyperparameter_sensitivity.py`, `scripts/12_subgroup_audit.py`, `outputs/tables/multiseed_stability_seed2026_2029.csv`, `outputs/tables/heldout_bootstrap_ci_seed2026.csv`, `outputs/tables/hgb_hyperparameter_sensitivity_seed2026.csv`, `outputs/tables/subgroup_performance_seed2026.csv`, `outputs/audits/week07_upgrade_integrity_audit.md`.
+- Next milestone is Week 8 paper draft integration and synthesis of reproducibility and governance evidence.
 
-Planned later (Weeks 6-10):
-- Full-feature comparison, ablation, and final paper and submission packaging remain planned.
+## Week 6 Reproduction
+Run from repository root.
+
+```
+.venv/bin/python scripts/07_week06_pipeline.py --seed 2026
+.venv/bin/python scripts/08_week06_report_package.py --seed 2026
+```
 
 ## Data
 Primary local inputs (not committed):

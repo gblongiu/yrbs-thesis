@@ -1,8 +1,9 @@
 # Experiment Log (Performed vs Planned)
 
-Status checkpoint (recorded 2026-02-18):
-- Weeks 1-5 deliverables complete.
-- Weeks 6-10 planned and not executed.
+Status checkpoint (recorded 2026-02-24):
+- Weeks 1 to 6 deliverables are complete.
+- Selected Week 7 robustness and governance artifacts are complete ahead of schedule.
+- Week 8 is the next milestone for draft integration.
 
 ## PERFORMED (Weeks 1-5)
 
@@ -88,13 +89,50 @@ Status checkpoint (recorded 2026-02-18):
   - On held-out test data, HGB improved Brier (`0.225224` vs `0.231985`) and slightly improved ROC AUC (`0.650200` vs `0.649822`) relative to the Week 4 baseline, while PR AUC decreased (`0.537872` vs `0.547476`).
   - Calibration intercept moved from `-0.363811` to `0.036123`, while calibration slope increased from `0.987174` to `1.071831`, indicating less systematic underprediction but steeper probability scaling.
 
-## PLANNED (Weeks 6-10)
+## PLANNED (Weeks 8-10)
 
-- Week 6: full-feature comparison and bullying-block ablation.
-- Week 7: final model selection package.
 - Week 8: first full paper draft and reproducibility appendix.
 - Week 9: revision and presentation plan.
 - Week 10: final submission bundle.
 
 Planned anchor document:
 - `docs/ablation_report.md`
+
+## (PERFORMED) | 2026-02-22 | Week 6 | Full-feature, ablation, and calibration package
+- Commands used:
+  - `.venv/bin/python scripts/07_week06_pipeline.py --seed 2026`
+  - `.venv/bin/python scripts/08_week06_report_package.py --seed 2026`
+  - `.venv/bin/pytest -q`
+- Feature definitions:
+  - `baseline_features = ['q1', 'q2', 'q3', 'raceeth']`
+  - `full_features = ['x_qn24', 'x_qn25', 'q1', 'q2', 'q3', 'raceeth']`
+  - `full_minus_bullying_features = ['q1', 'q2', 'q3', 'raceeth']`
+- Calibration protocol:
+  - CV: calibrator fit on training-fold probabilities only.
+  - Held-out: calibrator fit on train-only OOF probabilities.
+- Tradeoff analysis:
+  - Week 6 tables report ranking and calibration deltas jointly for full-feature, ablation, and calibration sensitivity comparisons.
+- Equality case: `full_minus_bullying_features` equals `baseline_features` under current modeling-table scope.
+- Deviations: None
+
+## (PERFORMED) | 2026-02-24 | Week 7 | Selected robustness and governance tasks completed ahead of schedule
+- Commands used:
+  - `.venv/bin/python scripts/09_multiseed_stability.py`
+  - `.venv/bin/python scripts/10_bootstrap_ci.py`
+  - `.venv/bin/python scripts/11_hyperparameter_sensitivity.py`
+  - `.venv/bin/python scripts/12_subgroup_audit.py`
+  - `.venv/bin/python scripts/13_upgrade_integrity_check.py`
+- Ahead-of-schedule artifact evidence:
+  - `outputs/tables/multiseed_stability_seed2026_2029.csv`
+  - `outputs/tables/heldout_bootstrap_ci_seed2026.csv`
+  - `outputs/tables/hgb_hyperparameter_sensitivity_seed2026.csv`
+  - `outputs/tables/subgroup_performance_seed2026.csv`
+  - `outputs/tables/hgb_seed2026_full_perm_importance_summary_extended.csv`
+  - `outputs/preds/preds_test_hgb_full_none_seed2026.csv`
+  - `outputs/audits/week07_upgrade_integrity_audit.md`
+  - `model_selection_framework.md`
+  - `deployment_and_use_constraints.md`
+- Frozen protocol continuity:
+  - Week 6 core outputs remain unchanged.
+  - Frozen Week 4 and Week 5 artifacts remain unchanged.
+  - Integrity evidence: `outputs/audits/week07_upgrade_integrity_audit.md`, `docs/status_reports/report_03/protocol_lock_confirmation.md`.

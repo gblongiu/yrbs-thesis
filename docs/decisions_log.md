@@ -1,6 +1,6 @@
 # Decisions Log (Performed vs Planned)
 
-This register tracks Week 1-5 implemented decisions and future planned decisions.
+This register tracks implemented decisions through Week 7 ahead-of-schedule work and forward planned decisions.
 
 ## PERFORMED Decisions (Weeks 1-5)
 
@@ -115,10 +115,37 @@ This register tracks Week 1-5 implemented decisions and future planned decisions
   - `outputs/tuning/hgb_seed2026_baseline_best_params.json`
   - `docs/experiment_log.md`
 
-## PLANNED Decisions (Week 6+)
-- Planned: full-feature comparison and bullying-block ablation package (Week 6).
-- Planned: final model selection and robustness package (Week 7).
+## PLANNED Decisions (Week 8+)
 - Planned: sensitivity and claim-audit policy for submission readiness (Week 8+).
+- Planned: final paper integration and submission package controls (Week 8 to Week 10).
 
 Planned document anchor:
 - `docs/ablation_report.md`
+
+## D014 (PERFORMED) | 2026-02-22 | Week 6
+- Decision: Execute Week 6 full-feature comparison, bullying-block ablation, and calibration sensitivity under frozen seed 2026 protocol.
+- Rationale: Proposal Week 6 milestone and Status Report 02 forward plan require these analyses under unchanged validation artifacts.
+- Equality condition: `full_minus_bullying_features` equals `baseline_features` due current modeling-table predictor scope.
+- Handling policy: Continue execution and document this as a structural limitation, not a protocol violation.
+- Evidence:
+  - `docs/status_reports/report_03/feature_set_definitions.md`
+  - `outputs/tables/week06_bullying_ablation_comparison_seed2026.csv`
+  - `outputs/tables/week06_calibration_sensitivity_seed2026.csv`
+- Deviations: None
+
+## D015 (PERFORMED) | 2026-02-24 | Week 7 Ahead of Schedule
+- Decision: Treat selected Week 7 robustness and governance tasks as completed ahead of schedule while preserving Week 6 submission scope.
+- Rationale: Artifacts were produced additively with frozen protocol continuity and no modification to frozen Week 4 and Week 5 artifacts.
+- Evidence:
+  - `scripts/09_multiseed_stability.py`
+  - `scripts/10_bootstrap_ci.py`
+  - `scripts/11_hyperparameter_sensitivity.py`
+  - `scripts/12_subgroup_audit.py`
+  - `scripts/13_upgrade_integrity_check.py`
+  - `outputs/tables/multiseed_stability_seed2026_2029.csv`
+  - `outputs/tables/heldout_bootstrap_ci_seed2026.csv`
+  - `outputs/tables/hgb_hyperparameter_sensitivity_seed2026.csv`
+  - `outputs/tables/subgroup_performance_seed2026.csv`
+  - `outputs/audits/week07_upgrade_integrity_audit.md`
+  - `docs/status_reports/report_03/protocol_lock_confirmation.md`
+- Scope statement: Week 6 outputs remain unchanged and frozen checks still pass.

@@ -1,0 +1,11 @@
+requirement_id,requirement_description,artifact_path,script_path,status
+W7-R1,Multiseed stability on fixed holdout split,outputs/tables/multiseed_stability_seed2026_2029.csv,scripts/09_multiseed_stability.py,implemented
+W7-R2,Held-out stratified bootstrap CI,outputs/tables/heldout_bootstrap_ci_seed2026.csv,scripts/10_bootstrap_ci.py,implemented
+W7-R3,Held-out full none prediction traceability,outputs/preds/preds_test_hgb_full_none_seed2026.csv,scripts/10_bootstrap_ci.py,implemented
+W7-R4,Hyperparameter sensitivity around tuned HGB,outputs/tables/hgb_hyperparameter_sensitivity_seed2026.csv,scripts/11_hyperparameter_sensitivity.py,implemented
+W7-R5,Permutation stability extension for bullying features,outputs/tables/hgb_seed2026_full_perm_importance_summary_extended.csv,scripts/11_hyperparameter_sensitivity.py,implemented
+W7-R6,Subgroup audit with undefined metric gating,outputs/tables/subgroup_performance_seed2026.csv,scripts/12_subgroup_audit.py,implemented
+W7-R7,Model selection governance rule,model_selection_framework.md,manual governance artifact,implemented
+W7-R8,Deployment constraints and non-causal framing,deployment_and_use_constraints.md,manual governance artifact,implemented
+W7-R9,Week 7 report upgrade with validation depth section,docs/status_reports/report_03/Project_Status_Report_03_Submission.md,scripts/14_week07_report_upgrade.py,implemented
+W7-R10,Deterministic integrity gate with whitelist immutability,outputs/audits/week07_upgrade_integrity_audit.md,scripts/13_upgrade_integrity_check.py,implemented
