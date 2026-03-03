@@ -136,3 +136,34 @@ Planned anchor document:
   - Week 6 core outputs remain unchanged.
   - Frozen Week 4 and Week 5 artifacts remain unchanged.
   - Integrity evidence: `outputs/audits/week07_upgrade_integrity_audit.md`, `docs/status_reports/report_03/protocol_lock_confirmation.md`.
+
+## (PERFORMED) | 2026-03-02 | Week 7 | SR04 report assembly and documentation packaging
+- Commands used:
+  - `.venv/bin/python scripts/13_upgrade_integrity_check.py`
+  - `.venv/bin/python` local `python-docx` edit of `docs/status_reports/report_04/Project_Status_Report_04_Submission.docx` cloned from `docs/status_reports/report_03/Project_Status_Report_03_Submission.docx`
+  - `.venv/bin/python` local style and evidence validation checks for SR04 markdown and docx artifacts
+- Workstream summary:
+  - No new modeling experiments were run.
+  - This week focused on report assembly, decision formalization, and writing scaffolds.
+  - Why this scope was chosen: keeping Week 7 documentation-first protected Week 8 draft readiness and avoided unnecessary reruns of analysis that already had complete evidence artifacts.
+- Documentation artifacts created or updated:
+  - `docs/status_reports/report_04/Project_Status_Report_04_Submission.md`
+  - `docs/status_reports/report_04/week07_model_selection_decision.md`
+  - `docs/status_reports/report_04/week07_alignment_with_feedback.md`
+  - `docs/status_reports/report_04/week07_run_manifest.json`
+  - `docs/status_reports/report_04/Project_Status_Report_04_Submission.docx`
+  - `submissions/Long_Gabriel_INFOI492_ProjectStatusReport04_2026-03-05.docx`
+  - `docs/manuscript_skeleton.md`
+  - `docs/figures_tables_inventory.md`
+  - `docs/status_reports/report_04/week07_docs_audit.md`
+- Evidence anchors used in report assembly:
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_none.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_platt.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_isotonic.csv`
+  - `outputs/metrics/metrics_test_seed2026_logreg_full_none.csv`
+  - `outputs/tables/multiseed_stability_seed2026_2029.csv`
+  - `outputs/tables/heldout_bootstrap_ci_seed2026.csv`
+  - `outputs/tables/hgb_hyperparameter_sensitivity_seed2026.csv`
+  - `outputs/tables/subgroup_performance_seed2026.csv`
+  - `outputs/tables/hgb_seed2026_full_perm_importance_summary_extended.csv`
+  - `outputs/audits/week07_upgrade_integrity_audit.md`

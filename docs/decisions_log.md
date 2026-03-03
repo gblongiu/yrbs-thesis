@@ -149,3 +149,39 @@ Planned document anchor:
   - `outputs/audits/week07_upgrade_integrity_audit.md`
   - `docs/status_reports/report_03/protocol_lock_confirmation.md`
 - Scope statement: Week 6 outputs remain unchanged and frozen checks still pass.
+
+## D016 (PERFORMED) | 2026-03-02 | Week 7 Reporting Lock
+- Decision: Use `hgb_full_platt` as the final model choice for Week 7 reporting.
+- Selection criteria source: `model_selection_framework.md`.
+- Rationale: The held-out candidate comparison places `hgb_full_platt` first by lowest Brier, then slope proximity to 1, with ROC AUC used as tertiary tie break.
+- Evidence:
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_platt.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_none.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_isotonic.csv`
+  - `outputs/metrics/metrics_test_seed2026_logreg_full_none.csv`
+  - `docs/status_reports/report_04/week07_model_selection_decision.md`
+  - `docs/status_reports/report_04/Project_Status_Report_04_Submission.md`
+
+## D017 (PERFORMED) | 2026-03-02 | Week 7 Scope Protection
+- Decision: Keep Week 7 as a documentation-first week and not run new model experiments.
+- Rationale: This protects Week 8 manuscript drafting time and preserves frozen protocol continuity while formalizing evidence and decisions for the report.
+- Evidence:
+  - `docs/experiment_log.md`
+  - `docs/status_reports/report_04/Project_Status_Report_04_Submission.md`
+  - `docs/status_reports/report_04/week07_run_manifest.json`
+  - `docs/manuscript_skeleton.md`
+  - `docs/figures_tables_inventory.md`
+
+## D018 (PERFORMED) | 2026-03-02 | Week 7 Reporting Package Strategy
+- Decision: Build the Week 7 reporting package from existing Week 6 and Week 7 artifacts, then add only minimal documentation files needed for rubric coverage and Week 8 drafting.
+- Rationale: This keeps scope controlled, improves narrative coherence, and avoids redundant regeneration work when evidence artifacts already exist.
+- Evidence:
+  - `docs/status_reports/report_04/Project_Status_Report_04_Submission.md`
+  - `docs/status_reports/report_04/week07_model_selection_decision.md`
+  - `docs/status_reports/report_04/week07_alignment_with_feedback.md`
+  - `docs/status_reports/report_04/week07_docs_audit.md`
+  - `docs/status_reports/report_04/week07_run_manifest.json`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_platt.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_none.csv`
+  - `outputs/metrics/metrics_test_seed2026_hgb_full_isotonic.csv`
+  - `outputs/metrics/metrics_test_seed2026_logreg_full_none.csv`
