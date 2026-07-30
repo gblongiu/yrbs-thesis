@@ -1,112 +1,100 @@
-# Modeling Report (Weeks 4-5)
+# Modeling Report
 
-Status: Week 4 and Week 5 modeling deliverables are performed and complete as of 2026-02-18.
+This report summarizes the retained final modeling results from Weeks 4 through 7.
 
-## Scope
-This report covers:
-- Week 4 baseline logistic model under frozen protocol
-- Week 5 tuned boosted model comparison under the same protocol
-- early calibration checks and fold-level stability diagnostics requested for Week 5
+## Feature Set Construction
+- Baseline covariates: `q1`, `q2`, `q3`, `raceeth`
+- Full feature set: baseline covariates plus `x_qn24` and `x_qn25`
+- `full_features` are derived from the modeling table after excluding targets, survey-design fields, identifiers, and known post-event leakage columns.
+- Under the retained predictor scope, `full_minus_bullying_features` equals the locked baseline covariate set. The Week 6 ablation should therefore be read as the incremental bullying-block comparison within the final thesis predictor boundary.
 
-## Shared Validation Protocol
+## Frozen Validation Protocol
 - Seed: `2026`
-- Test split policy: frozen holdout artifact in `outputs/splits/holdout_seed2026.npz`
-- CV policy: frozen fold artifact in `outputs/splits/cvfolds_seed2026.npz`
-- Feature scope in Week 5: `baseline`
-- Calibration mode in Week 5 primary run: `none`
+- Held-out split artifact: `outputs/splits/holdout_seed2026.npz`
+- Cross-validation fold artifact: `outputs/splits/cvfolds_seed2026.npz`
+- Frozen tuned HGB parameter artifact: `outputs/tuning/hgb_seed2026_baseline_best_params.json`
 
-## Week 4 Baseline Reference
-Command:
-- `python3 scripts/03_train_models.py --model logreg --features baseline --seed 2026 --calibration none --n_boot 0 --outdir outputs`
+## Week 4 Baseline Logistic Reference
+- Held-out ROC AUC: `0.649822`
+- Held-out PR AUC: `0.547476`
+- Held-out Brier: `0.231985`
+- Held-out calibration slope: `0.987174`
+- Held-out calibration intercept: `-0.363811`
 
-Core artifacts:
+Core evidence:
 - `outputs/metrics/metrics_cv_seed2026_logreg_baseline_none.csv`
 - `outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv`
 
-Held-out baseline metrics:
-- ROC AUC: `0.649822`
-- PR AUC: `0.547476`
-- Brier: `0.231985`
-- Calibration slope: `0.987174`
-- Calibration intercept: `-0.363811`
+## Week 5 Tuned HGB Baseline Comparator
+- Held-out ROC AUC: `0.650200`
+- Held-out PR AUC: `0.537872`
+- Held-out Brier: `0.225224`
+- Held-out calibration slope: `1.071831`
+- Held-out calibration intercept: `0.036123`
 
-## Week 5 Tuned HGB Run
-Run ID:
-- `week05_models_v1_seed2026_hgb_baseline_none`
+Best retained tuning parameters:
+- `learning_rate = 0.01`
+- `max_depth = 5`
+- `max_iter = 600`
+- `min_samples_leaf = 120`
+- `max_leaf_nodes = 15`
+- `l2_regularization = 0.01`
 
-Commands:
-- `.venv/bin/python scripts/03_train_models.py --model hgb --features baseline --seed 2026 --calibration none --n_boot 0 --outdir outputs --run-id week05_models_v1_seed2026_hgb_baseline_none --tune_hgb 1 --hgb_search_iter 12 --save_cv_preds 1 --enforce_frozen_artifacts 1 --week5_artifacts_only 1`
-- `.venv/bin/python scripts/04_week05_diagnostics.py --model hgb --baseline-model logreg --features baseline --seed 2026 --calibration none --outdir outputs`
-
-Tuning method:
-- RandomizedSearchCV on training partition only with frozen seed and CV policy
-- Scoring metric: ROC AUC
-- Search iterations: `12`
-
-Best tuned parameters:
-- `learning_rate`: `0.01`
-- `max_depth`: `5`
-- `max_iter`: `600`
-- `min_samples_leaf`: `120`
-- `max_leaf_nodes`: `15`
-- `l2_regularization`: `0.01`
-- Best CV ROC AUC from search: `0.650538`
-
-Primary Week 5 artifacts:
-- `outputs/tuning/hgb_seed2026_baseline_search_results.csv`
-- `outputs/tuning/hgb_seed2026_baseline_best_params.json`
+Core evidence:
 - `outputs/metrics/metrics_cv_seed2026_hgb_baseline_none.csv`
 - `outputs/metrics/metrics_test_seed2026_hgb_baseline_none.csv`
+- `outputs/tuning/hgb_seed2026_baseline_best_params.json`
 - `outputs/tables/week05_calibration_comparison_seed2026.csv`
-- `outputs/figures/week05_calibration_comparison_seed2026.png`
 - `outputs/tables/hgb_seed2026_baseline_perm_importance_summary.csv`
 
-## Week 5 Comparison vs Baseline
+## Week 6 Full-Feature Comparison
+Adding the bullying block improved held-out performance relative to the frozen logistic baseline:
+- ROC AUC delta: `0.066235`
+- PR AUC delta: `0.096596`
+- Brier delta: `-0.025807`
 
-### Cross-validation summary
-| Model | ROC AUC mean | PR AUC mean | Brier mean | Calibration slope mean | Calibration intercept mean |
-| --- | --- | --- | --- | --- | --- |
-| logreg baseline | 0.651014 | 0.534537 | 0.232424 | 0.981693 | -0.371663 |
-| tuned hgb | 0.650538 | 0.534563 | 0.225156 | 1.047686 | 0.015911 |
+Bullying-block ablation relative to the non-bullying comparator:
+- ROC AUC delta: `0.065857`
+- PR AUC delta: `0.106201`
+- Brier delta: `-0.019046`
 
-### Held-out test summary
-| Model | ROC AUC | PR AUC | Brier | Calibration slope | Calibration intercept |
-| --- | --- | --- | --- | --- | --- |
-| logreg baseline | 0.649822 | 0.547476 | 0.231985 | 0.987174 | -0.363811 |
-| tuned hgb | 0.650200 | 0.537872 | 0.225224 | 1.071831 | 0.036123 |
+Calibration sensitivity on held-out data for the HGB full candidate:
+- None: Brier `0.206178`, slope `1.046301`
+- Platt: Brier `0.206122`, slope `1.005455`
+- Isotonic: Brier `0.206546`, slope `0.980255`
 
-### Calibration interpretation
-- Intercept changed from `-0.363811` to `0.036123`, which indicates reduced systematic underprediction on the held-out test set.
-- Slope changed from `0.987174` to `1.071831`, which indicates steeper probability scaling for HGB.
-- Brier improved from `0.231985` to `0.225224`, so probability error decreased even with the slope increase.
+Core evidence:
+- `outputs/tables/week06_full_feature_comparison_seed2026.csv`
+- `outputs/tables/week06_bullying_ablation_comparison_seed2026.csv`
+- `outputs/tables/week06_calibration_sensitivity_seed2026.csv`
+- `outputs/metrics/metrics_test_seed2026_hgb_full_platt.csv`
+- `outputs/figures/week06_calibration_sensitivity_seed2026.png`
 
-### Early calibration checks
-- Comparison table: `outputs/tables/week05_calibration_comparison_seed2026.csv`
-- Comparison figure: `outputs/figures/week05_calibration_comparison_seed2026.png`
-- Overlay was built from the existing calibration curve CSV outputs produced by `scripts/03_train_models.py`, preserving the same calibration binning method used in the Week 4 plotting workflow.
+## Week 7 Model Selection And Robustness
+Selected final headline model: `hgb_full_platt`
 
-## Feature Importance Stability (Week 5)
-- Mean Spearman rank stability vs mean rank: `1.0`
-- Mean pairwise Jaccard overlap for top-k: `1.0`
-- Top-k used: `10`
+Ranking rule:
+1. Lowest held-out Brier score
+2. Calibration slope closest to `1`
+3. Held-out ROC AUC as the tie-breaker
 
-Per-fold top feature set confirmation from `outputs/tables/hgb_seed2026_baseline_perm_importance_by_fold.csv`:
-- fold 0: `q2`, `raceeth`, `q1`, `q3`
-- fold 1: `q2`, `raceeth`, `q1`, `q3`
-- fold 2: `q2`, `raceeth`, `q1`, `q3`
-- fold 3: `q2`, `raceeth`, `q1`, `q3`
-- fold 4: `q2`, `raceeth`, `q1`, `q3`
-- all fold top-k sets match: `True`
+Held-out metrics for the selected model:
+- ROC AUC: `0.716057`
+- PR AUC: `0.644073`
+- Brier: `0.206122`
+- Calibration slope: `1.005455`
+- Calibration intercept: `0.014371`
 
-Interpretation:
-- The raw-input feature ranking pattern is fully stable across folds in this Week 5 run, with `q2` strongest and `raceeth` second.
+Retained robustness summaries:
+- `outputs/tables/multiseed_stability_seed2026_2029.csv`
+- `outputs/tables/heldout_bootstrap_ci_seed2026.csv`
+- `outputs/tables/hgb_hyperparameter_sensitivity_seed2026.csv`
+- `outputs/tables/subgroup_performance_seed2026.csv`
+- `outputs/tables/hgb_seed2026_full_perm_importance_summary_extended.csv`
 
-Limitation:
-- Permutation importance in this implementation is computed at the raw input feature level, not at transformed one-hot feature level.
+Robustness boundary:
+- The multiseed, bootstrap, hyperparameter, subgroup, and permutation-importance summaries describe the retained full HGB candidate family under the frozen split protocol.
+- The final calibration choice is reported separately through the Week 6 calibration-sensitivity package and the selected held-out metrics file for `hgb_full_platt`.
 
-## Week 5 Completion Statement
-Week 5 deliverables are met:
-- tuned boosted model run under frozen protocol
-- baseline vs boosted calibration comparison artifacts
-- fold-level feature importance stability diagnostics
-- updated documentation and status-report package
+## Interpretation Boundary
+All reported results are predictive associations under the fixed protocol. The study does not claim causal effects and does not present the selected model as deployment-ready.

@@ -1,0 +1,2 @@
+split_scope,seed,model,featureset,calibration_method,n_train,n_test,roc_auc,pr_auc,brier,calibration_slope,calibration_intercept
+heldout_test,2026,hgb,full_minus_bullying,none,15890,3973,0.6502001404549629,0.5378715289032241,0.22522400718432628,1.0718307065335446,0.036123328569859954

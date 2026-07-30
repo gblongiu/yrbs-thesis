@@ -20,48 +20,19 @@ from week06 import (
     build_preprocessor,
     build_week06_figures,
     build_week06_tables,
-    convert_pdf_to_text,
     derive_feature_sets,
-    first_matching_line,
-    metric_value_from_csv,
     prepare_feature_frame,
-    read_text,
     recompute_split_and_fold_artifacts,
     require_paths,
-    resolve_pdftotext,
     run_cv_metrics_with_leakage_safe_calibration,
     run_permutation_importance_stability,
     run_test_metrics_with_train_only_calibration,
     snapshot_hashes,
-    temp_dir,
     validate_metric_fields,
     verify_frozen_split_and_fold_equality,
     verify_hashes_unchanged,
-    write_json,
     write_row_csv,
 )
-
-
-PDF_PATHS = {
-    "proposal": Path(
-        "/Users/gabriellong/Desktop/Senior Thesis/Module 01/Assignment 01/Long_Gabriel_INFOI492_ProjectProposal_2026-01-22.pdf"
-    ),
-    "lit_review": Path(
-        "/Users/gabriellong/Desktop/Senior Thesis/Module 02/Assignment 02/Long_Gabriel_INFOI492_LiteratureReview_2026-02-05.pdf"
-    ),
-    "status_01": Path(
-        "/Users/gabriellong/Desktop/Senior Thesis/Module 03/Long_Gabriel_INFOI492_ProjectStatusReport01_2026-02-12.pdf"
-    ),
-    "status_02": Path(
-        "/Users/gabriellong/Desktop/Senior Thesis/Module 04/Long_Gabriel_INFOI492_ProjectStatusReport02_2026-02-19.pdf"
-    ),
-    "yrbs_guide": Path(
-        "/Users/gabriellong/Desktop/Senior Thesis/Module 02/Assignment 02/Assignment Materials/Sources/2023_National_YRBS_Data_Users_Guide508.pdf"
-    ),
-    "yrbs_combined": Path(
-        "/Users/gabriellong/Desktop/Senior Thesis/Module 02/Assignment 02/Assignment Materials/Sources/2023-YRBS-SADC-Documentation.pdf"
-    ),
-}
 
 
 def _rel(path: Path) -> str:
@@ -69,171 +40,6 @@ def _rel(path: Path) -> str:
         return str(path.resolve().relative_to(PROJECT_ROOT.resolve()))
     except Exception:
         return str(path)
-
-
-def write_contract_extracts(out_path: Path) -> None:
-    pdftotext = resolve_pdftotext()
-    require_paths(list(PDF_PATHS.values()))
-
-    with temp_dir() as tmp:
-        tmp_dir = Path(tmp)
-        txt_paths: Dict[str, Path] = {}
-        texts: Dict[str, str] = {}
-        for key, pdf in PDF_PATHS.items():
-            txt = tmp_dir / f"{key}.txt"
-            convert_pdf_to_text(pdftotext, pdf, txt)
-            txt_paths[key] = txt
-            texts[key] = read_text(txt)
-
-        sections = {
-            "Week 6 milestone definition": [
-                (
-                    "proposal",
-                    ["ablation", "qn24", "qn25"],
-                    "Proposal timeline milestone for Week 6.",
-                ),
-                (
-                    "status_02",
-                    ["week 6", "full-feature", "ablation"],
-                    "Status Report 02 planned Week 6 activities.",
-                ),
-            ],
-            "Evaluation metric contract": [
-                (
-                    "proposal",
-                    ["evaluation metrics", "roc auc", "pr auc", "brier"],
-                    "Primary metric contract from proposal.",
-                ),
-                (
-                    "status_01",
-                    ["roc auc", "pr auc", "brier"],
-                    "Week 4 baseline metric reporting format.",
-                ),
-            ],
-            "Calibration requirements": [
-                (
-                    "lit_review",
-                    ["calibration intercept", "slope", "brier"],
-                    "Calibration is co-primary with discrimination.",
-                ),
-                (
-                    "status_02",
-                    ["platt", "isotonic", "deferred"],
-                    "Deferred calibration methods assigned to Week 6.",
-                ),
-            ],
-            "Interpretability objectives": [
-                (
-                    "proposal",
-                    ["interpretability", "qn24", "qn25"],
-                    "Interpretability questions tied to bullying features.",
-                ),
-                (
-                    "status_02",
-                    ["feature-importance", "stability"],
-                    "Fold-level stability objective continuation.",
-                ),
-            ],
-            "Scope controls": [
-                (
-                    "proposal",
-                    ["scope creep", "controls"],
-                    "Proposal scope creep controls.",
-                ),
-                (
-                    "proposal",
-                    ["fixed model set", "performance", "calibration"],
-                    "Model and selection controls.",
-                ),
-            ],
-            "Non-causal language constraints": [
-                (
-                    "proposal",
-                    ["not as causal effects"],
-                    "Core non-causal reporting statement.",
-                ),
-                (
-                    "lit_review",
-                    ["rather than causal inference"],
-                    "Literature review non-causal boundary.",
-                ),
-            ],
-        }
-
-        lines: List[str] = []
-        lines.append("# Week 6 Contract Extracts")
-        lines.append("")
-        lines.append("This file captures binding Week 6 contract anchors extracted from provided PDFs.")
-        lines.append("")
-
-        for heading, specs in sections.items():
-            lines.append(f"## {heading}")
-            lines.append("")
-            for source_key, keywords, note in specs:
-                quote = first_matching_line(texts[source_key], keywords=keywords)
-                lines.append(f"- {note}")
-                lines.append(f"  - Source: `{PDF_PATHS[source_key]}`")
-                lines.append(f"  - Quote: \"{quote}\"")
-            lines.append("")
-
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text("\n".join(lines), encoding="utf-8")
-
-
-def write_feature_set_definitions(
-    *,
-    out_path: Path,
-    feature_sets,
-    model_columns: List[str],
-) -> None:
-    lines: List[str] = []
-    lines.append("# Week 6 Feature Set Definitions")
-    lines.append("")
-    lines.append("## Baseline Features")
-    lines.append("")
-    lines.append(f"`baseline_features = {feature_sets.baseline_features}`")
-    lines.append("")
-    lines.append("## Programmatic Full Features")
-    lines.append("")
-    lines.append(
-        "`full_features` are derived from modeling-table predictors after explicit exclusions for target columns, secondary outcomes, design fields, identifiers, and known post-event leakage columns."
-    )
-    lines.append("")
-    lines.append(f"`full_features = {feature_sets.full_features}`")
-    lines.append(f"- Total full feature count: `{len(feature_sets.full_features)}`")
-    lines.append("")
-    lines.append("## Full Minus Bullying")
-    lines.append("")
-    lines.append(f"`full_minus_bullying_features = {feature_sets.full_minus_bullying_features}`")
-    lines.append(f"- Total full-minus-bullying feature count: `{len(feature_sets.full_minus_bullying_features)}`")
-    lines.append("")
-    lines.append("## Explicit Exclusions")
-    lines.append("")
-    for key, cols in feature_sets.excluded_columns.items():
-        lines.append(f"- `{key}`: `{cols}`")
-    lines.append("")
-    lines.append("## Bullying Inclusion Check")
-    lines.append("")
-    lines.append(f"- `x_qn24 in full_features`: `{ 'x_qn24' in feature_sets.full_features }`")
-    lines.append(f"- `x_qn25 in full_features`: `{ 'x_qn25' in feature_sets.full_features }`")
-    lines.append("")
-    lines.append("## Equality Handling")
-    lines.append("")
-    lines.append(
-        "If `full_minus_bullying_features` equals `baseline_features`, execution continues by contract and this condition is treated as a modeling-table limitation rather than a protocol violation."
-    )
-    lines.append(f"- Equality triggered: `{feature_sets.equals_baseline}`")
-    if feature_sets.equals_baseline:
-        lines.append(
-            "- Structural limitation note: the current modeling table predictors are baseline covariates plus bullying exposures under the approved scope."
-        )
-    lines.append("")
-    lines.append("## Modeling Table Columns")
-    lines.append("")
-    lines.append(f"`{model_columns}`")
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def run_single_configuration(
@@ -330,7 +136,7 @@ def append_logs(
 
     exp_lines = []
     exp_lines.append("")
-    exp_lines.append(f"## (PERFORMED) | {date_str} | Week 6 | Full-feature, ablation, and calibration package")
+    exp_lines.append(f"## (PERFORMED) | {date_str} | Week 6 | Full-feature, ablation, and calibration analysis")
     exp_lines.append("- Commands used:")
     for cmd in commands_used:
         exp_lines.append(f"  - `{cmd}`")
@@ -353,12 +159,12 @@ def append_logs(
     dec_lines.append("")
     dec_lines.append(f"## D014 (PERFORMED) | {date_str} | Week 6")
     dec_lines.append("- Decision: Execute Week 6 full-feature comparison, bullying-block ablation, and calibration sensitivity under frozen seed 2026 protocol.")
-    dec_lines.append("- Rationale: Proposal Week 6 milestone and Status Report 02 forward plan require these analyses under unchanged validation artifacts.")
+    dec_lines.append("- Rationale: The locked analysis plan requires these comparisons under unchanged split, fold, and baseline-reference artifacts.")
     if equality_triggered:
         dec_lines.append("- Equality condition: `full_minus_bullying_features` equals `baseline_features` due current modeling-table predictor scope.")
         dec_lines.append("- Handling policy: Continue execution and document this as a structural limitation, not a protocol violation.")
     dec_lines.append("- Evidence:")
-    dec_lines.append("  - `docs/status_reports/report_03/feature_set_definitions.md`")
+    dec_lines.append("  - `outputs/tables/week06_full_feature_comparison_seed2026.csv`")
     dec_lines.append("  - `outputs/tables/week06_bullying_ablation_comparison_seed2026.csv`")
     dec_lines.append("  - `outputs/tables/week06_calibration_sensitivity_seed2026.csv`")
     dec_lines.append("- Deviations: None")
@@ -366,31 +172,8 @@ def append_logs(
         f.write("\n".join(dec_lines) + "\n")
 
 
-def write_protocol_lock_confirmation(
-    *,
-    out_path: Path,
-    seed: int,
-    frozen_paths: List[Path],
-) -> None:
-    lines = []
-    lines.append("# Protocol Lock Confirmation")
-    lines.append("")
-    lines.append("- Frozen artifacts verified: `True`")
-    lines.append("- Validation protocol unchanged: `True`")
-    lines.append(f"- Seed remains: `{seed}`")
-    lines.append("- No frozen outputs modified: `True`")
-    lines.append("")
-    lines.append("## Frozen Artifact Set")
-    lines.append("")
-    for p in frozen_paths:
-        lines.append(f"- `{_rel(p)}`")
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(lines), encoding="utf-8")
-
-
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Week 6 contract-aligned execution pipeline.")
+    parser = argparse.ArgumentParser(description="Week 6 full-feature, ablation, and calibration analysis.")
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--outdir", type=Path, default=Path("outputs"))
     parser.add_argument("--n-perm-repeats", type=int, default=30)
@@ -402,8 +185,6 @@ def main() -> None:
     out_metrics = args.outdir / "metrics"
     out_tables = args.outdir / "tables"
     out_figures = args.outdir / "figures"
-    report_dir = PROJECT_ROOT / "docs" / "status_reports" / "report_03"
-    report_dir.mkdir(parents=True, exist_ok=True)
 
     modeling_path = PROJECT_ROOT / "data" / "processed" / "yrbs_2023_modeling.parquet"
     holdout_path = args.outdir / "splits" / "holdout_seed2026.npz"
@@ -426,8 +207,6 @@ def main() -> None:
     ]
     require_paths(required_paths)
 
-    write_contract_extracts(report_dir / "contract_extracts.md")
-
     pre_hashes = snapshot_hashes(required_paths)
 
     df = pd.read_parquet(modeling_path)
@@ -448,11 +227,6 @@ def main() -> None:
     )
 
     feature_sets = derive_feature_sets(df.columns.tolist())
-    write_feature_set_definitions(
-        out_path=report_dir / "feature_set_definitions.md",
-        feature_sets=feature_sets,
-        model_columns=df.columns.tolist(),
-    )
 
     tuned_payload = json.loads(tuned_path.read_text(encoding="utf-8"))
     tuned_best_params = tuned_payload.get("best_params", {})
@@ -582,8 +356,6 @@ def main() -> None:
 
     commands = [
         f".venv/bin/python scripts/07_week06_pipeline.py --seed {args.seed}",
-        f".venv/bin/python scripts/08_week06_report_package.py --seed {args.seed}",
-        ".venv/bin/pytest -q",
     ]
     append_logs(
         experiment_log_path=PROJECT_ROOT / "docs" / "experiment_log.md",
@@ -597,40 +369,16 @@ def main() -> None:
     post_hashes = snapshot_hashes(required_paths)
     verify_hashes_unchanged(pre_hashes, post_hashes)
 
-    write_protocol_lock_confirmation(
-        out_path=report_dir / "protocol_lock_confirmation.md",
-        seed=args.seed,
-        frozen_paths=required_paths,
+    print(
+        json.dumps(
+            {
+                "status": "ok",
+                "tables": sorted([_rel(full_table_path), _rel(ablation_table_path), _rel(calibration_table_path)]),
+                "figures": sorted([_rel(full_fig_path), _rel(ablation_fig_path), _rel(cal_fig_path)]),
+            },
+            indent=2,
+        )
     )
-
-    context_payload = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "seed": args.seed,
-        "feature_sets": {
-            "baseline_features": feature_sets.baseline_features,
-            "full_features": feature_sets.full_features,
-            "full_minus_bullying_features": feature_sets.full_minus_bullying_features,
-            "equals_baseline": feature_sets.equals_baseline,
-        },
-        "frozen_hashes_pre": pre_hashes,
-        "frozen_hashes_post": post_hashes,
-        "frozen_hash_check_passed": True,
-        "paths": {
-            "contract_extracts": _rel(report_dir / "contract_extracts.md"),
-            "feature_set_definitions": _rel(report_dir / "feature_set_definitions.md"),
-            "protocol_lock_confirmation": _rel(report_dir / "protocol_lock_confirmation.md"),
-            "metrics": sorted([_rel(p) for p in metrics_paths.values()]),
-            "tables": sorted([_rel(full_table_path), _rel(ablation_table_path), _rel(calibration_table_path), _rel(by_fold_path), _rel(summary_path)]),
-            "figures": sorted([_rel(full_fig_path), _rel(ablation_fig_path), _rel(cal_fig_path)]),
-        },
-        "commands": commands,
-        "notes": {
-            "ablation_equality_policy": "non_fatal_continue_with_documentation" if feature_sets.equals_baseline else "not_triggered"
-        },
-    }
-    write_json(report_dir / "week06_context.json", context_payload)
-
-    print(json.dumps({"status": "ok", "context": _rel(report_dir / "week06_context.json")}, indent=2))
 
 
 if __name__ == "__main__":

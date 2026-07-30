@@ -50,19 +50,13 @@ def main() -> None:
 
     modeling_path = PROJECT_ROOT / "data" / "processed" / "yrbs_2023_modeling.parquet"
     holdout_path = args.outdir / "splits" / "holdout_seed2026.npz"
-    cvfolds_path = args.outdir / "splits" / "cvfolds_seed2026.npz"
     tuned_path = args.outdir / "tuning" / "hgb_seed2026_baseline_best_params.json"
-    manifest_path = PROJECT_ROOT / "docs" / "status_reports" / "report_03" / "week06_run_manifest.json"
-    perm_by_fold_path = args.outdir / "tables" / "hgb_seed2026_full_perm_importance_by_fold.csv"
 
     require_paths(
         [
             modeling_path,
             holdout_path,
-            cvfolds_path,
             tuned_path,
-            manifest_path,
-            perm_by_fold_path,
         ]
     )
 
@@ -92,19 +86,6 @@ def main() -> None:
     )
     model.fit(x_train, y_train)
     y_prob = clip_probs(model.predict_proba(x_test)[:, 1])
-
-    preds_path = args.outdir / "preds" / "preds_test_hgb_full_none_seed2026.csv"
-    preds_path.parent.mkdir(parents=True, exist_ok=True)
-    preds_df = pd.DataFrame(
-        {
-            "row_index": test_idx.astype(int),
-            "y_true": y_test.to_numpy(dtype=int),
-            "y_prob": y_prob,
-            "seed": args.seed,
-            "sample_scope": "heldout_test_only",
-        }
-    )
-    preds_df.to_csv(preds_path, index=False)
 
     # Stratified bootstrap on held-out test rows only.
     draws = stratified_bootstrap_metric_draws(
@@ -140,7 +121,6 @@ def main() -> None:
         json.dumps(
             {
                 "status": "ok",
-                "predictions": str(preds_path),
                 "ci_table": str(out_path),
             },
             indent=2,

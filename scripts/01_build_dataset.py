@@ -59,6 +59,13 @@ def _sha256_df(df: pd.DataFrame) -> str:
     return h.hexdigest()
 
 
+def _rel(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT.resolve()))
+    except Exception:
+        return str(path)
+
+
 def _binary_recoding_decision(series: pd.Series, source_col: str) -> dict:
     observed = _observed_non_null_codes(series)
     observed_set = set(observed)
@@ -102,7 +109,7 @@ def build_modeling_table(df_raw: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     assert_required_columns(df_raw, required)
 
     decisions: dict = {
-        "input_file": str(RAW_FILE_2023),
+        "input_file": _rel(RAW_FILE_2023),
         "columns": {
             "target_primary": TARGET_PRIMARY,
             "secondary_targets": list(SECONDARY_TARGETS),
@@ -253,8 +260,8 @@ def main() -> None:
         "raw_rows": raw_rows,
         "modeling_rows": modeling_rows,
         "modeling_cols": modeling_cols,
-        "output_parquet": str(args.out_parquet),
-        "missingness_csv": str(args.missingness_csv),
+        "output_parquet": _rel(args.out_parquet),
+        "missingness_csv": _rel(args.missingness_csv),
         "content_hash_sha256": content_hash,
     }
     args.decisions_json.write_text(json.dumps(decisions_payload, indent=2, sort_keys=True), encoding="utf-8")
@@ -275,9 +282,8 @@ def main() -> None:
                 "y_qn26_n1": n_1,
                 "y_qn26_n0": n_0,
                 "y_qn26_rate": y_rate,
-                "missingness_summary_csv": str(args.missingness_csv),
+                "missingness_csv": _rel(args.missingness_csv),
                 "content_hash_sha256": content_hash,
-                "decisions_json": str(args.decisions_json),
             }
         ]
     )

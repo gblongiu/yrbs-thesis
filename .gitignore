@@ -1,15 +1,9 @@
-# =========================
-# OS / Editor
-# =========================
 .DS_Store
+Thumbs.db
 .AppleDouble
 .LSOverride
-.idea/
-.vscode/
-
-# =========================
-# Python bytecode / caches
-# =========================
+._*
+__MACOSX/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,114 +13,52 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
-*.egg-info/
 dist/
 build/
+*.egg-info/
 
-# =========================
-# Environments / local config
-# =========================
+.idea/
+.vscode/
 .venv/
 venv/
 ENV/
 .env
 .env.*
 .python-version
-
-# =========================
-# Notebooks / temp / logs
-# =========================
 .ipynb_checkpoints/
-*.log
 tmp/
 *.tmp
+*.bak
+*.orig
+*.log
+*.swp
+*.swo
+.Rhistory
 
-# =========================
-# Office temporary / lock files
-# =========================
 ~$*.docx
 ~$*.xlsx
 ~$*.pptx
+*.zip
+*_Submission_*/
 
-# =========================
-# Data (local-only, sensitive/large)
-# =========================
 data/raw/
-data/raw/**
 data/raw_sources/
-data/raw_sources/**
 data/interim/
-data/interim/**
 data/transcripts/
-data/transcripts/**
+data/processed/
 !data/README.md
 
-# Processed data: local-only (keep folder marker, ignore contents)
-data/processed/**
-!data/processed/.gitkeep
-
-# =========================
-# Outputs (ignore by default; commit curated evidence only)
-# =========================
-outputs/
-outputs/**
-
-# Keep directories so negations can match
-!outputs/
-!outputs/logs/
-!outputs/splits/
-!outputs/metrics/
-!outputs/tables/
-!outputs/figures/
-
-# --- Curated logs (tracked) ---
-!outputs/logs/environment_check.json
-!outputs/logs/decisions.json
-!outputs/logs/eda_run_metadata.json
-
-# --- Curated splits (tracked) ---
-!outputs/splits/holdout_seed2026.npz
-!outputs/splits/cvfolds_seed2026.npz
-
-# --- Curated metrics (tracked) ---
-!outputs/metrics/metrics_cv_seed2026_logreg_baseline_none.csv
-!outputs/metrics/metrics_test_seed2026_logreg_baseline_none.csv
-
-# --- Curated tables (tracked) ---
-!outputs/tables/schema.csv
-!outputs/tables/missingness_summary.csv
-!outputs/tables/modeling_table_audit.csv
-!outputs/tables/missingness_modeling.csv
-!outputs/tables/missingness_eda.csv
-!outputs/tables/unweighted_prevalence_overall.csv
-!outputs/tables/weighted_prevalence_overall.csv
-!outputs/tables/weighted_prevalence_by_q1.csv
-!outputs/tables/weighted_prevalence_by_q2.csv
-!outputs/tables/weighted_prevalence_by_q3.csv
-!outputs/tables/weighted_prevalence_by_raceeth.csv
-!outputs/tables/value_counts_QN24.csv
-!outputs/tables/value_counts_QN25.csv
-!outputs/tables/value_counts_QN26.csv
-
-# --- Curated figures (tracked) ---
-!outputs/figures/missingness_bar.png
-!outputs/figures/prevalence_overall_weighted_vs_unweighted.png
-!outputs/figures/qn26_prevalence_by_q1.png
-!outputs/figures/qn26_prevalence_by_raceeth.png
-
-# Safety: keep heavy / volatile output areas ignored even if created
+outputs/logs/
 outputs/models/
-outputs/models/**
-outputs/cache/
-outputs/cache/**
-outputs/tmp/
-outputs/tmp/**
-outputs/plots/
-outputs/plots/**
-
-# =========================
-# Docs (local-only deliverables)
-# =========================
-docs/status_reports/
-docs/status_reports/**
-docs/week*_audit_report.md
+outputs/preds/
+outputs/audits/
+outputs/tables/preds_*.csv
+outputs/tables/calibration_curve*.csv
+outputs/tables/results_summary_*.csv
+outputs/tables/primary_metrics_with_ci.csv
+outputs/tables/*bootstrap_draws*.csv
+outputs/tuning/*_search_results.csv
+outputs/figures/roc_curve_*.png
+outputs/figures/pr_curve_*.png
+outputs/figures/confusion_matrix_*.png
+outputs/figures/hgb_seed*_importance_stability.png

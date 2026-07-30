@@ -7,7 +7,7 @@ Notes:
 - This script keeps the Week 4 holdout split fixed with seed 2026.
 - It varies only CV fold construction on the fixed training partition.
 - Across-seed standard deviations are repeated on every output row by design
-  so each row is self-contained for downstream audit joins.
+  so each row is self-contained for downstream summaries.
 """
 
 import argparse
@@ -66,20 +66,14 @@ def main() -> None:
 
     modeling_path = PROJECT_ROOT / "data" / "processed" / "yrbs_2023_modeling.parquet"
     holdout_path = args.outdir / "splits" / "holdout_seed2026.npz"
-    cvfolds_path = args.outdir / "splits" / "cvfolds_seed2026.npz"
     tuned_path = args.outdir / "tuning" / "hgb_seed2026_baseline_best_params.json"
-    manifest_path = PROJECT_ROOT / "docs" / "status_reports" / "report_03" / "week06_run_manifest.json"
-    perm_by_fold_path = args.outdir / "tables" / "hgb_seed2026_full_perm_importance_by_fold.csv"
 
-    # Fail-fast guard for all declared Week 7 prerequisites.
+    # Fail-fast guard for the actual scientific prerequisites used here.
     require_paths(
         [
             modeling_path,
             holdout_path,
-            cvfolds_path,
             tuned_path,
-            manifest_path,
-            perm_by_fold_path,
         ]
     )
 

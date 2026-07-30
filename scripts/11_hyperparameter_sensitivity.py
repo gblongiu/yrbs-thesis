@@ -163,7 +163,6 @@ def main() -> None:
     holdout_path = args.outdir / "splits" / "holdout_seed2026.npz"
     cvfolds_path = args.outdir / "splits" / "cvfolds_seed2026.npz"
     tuned_path = args.outdir / "tuning" / "hgb_seed2026_baseline_best_params.json"
-    manifest_path = PROJECT_ROOT / "docs" / "status_reports" / "report_03" / "week06_run_manifest.json"
     perm_by_fold_path = args.outdir / "tables" / "hgb_seed2026_full_perm_importance_by_fold.csv"
 
     require_paths(
@@ -172,7 +171,6 @@ def main() -> None:
             holdout_path,
             cvfolds_path,
             tuned_path,
-            manifest_path,
             perm_by_fold_path,
         ]
     )

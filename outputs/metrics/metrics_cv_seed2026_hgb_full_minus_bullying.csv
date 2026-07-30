@@ -1,0 +1,2 @@
+split_scope,seed,model,featureset,calibration_method,n_train,cv_folds,roc_auc,pr_auc,brier,calibration_slope,calibration_intercept,roc_auc_std,pr_auc_std,brier_std,calibration_slope_std,calibration_intercept_std
+cv_mean,2026,hgb,full_minus_bullying,none,15890,5,0.650538032849739,0.53456298084686,0.22515572859874045,1.0476856517876691,0.015911068066157115,0.01066648573286112,0.012163549715575275,0.002333865428731194,0.12821897857056655,0.05526213517504921

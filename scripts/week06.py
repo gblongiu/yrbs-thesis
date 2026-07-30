@@ -3,10 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -125,27 +122,6 @@ def verify_hashes_unchanged(before: Dict[str, str], after: Dict[str, str]) -> No
     if changed:
         lines = [f"{k}: {before[k]} -> {after[k]}" for k in changed]
         raise RuntimeError("Frozen artifact hash mismatch detected:\n" + "\n".join(lines))
-
-
-def resolve_pdftotext() -> str:
-    path = shutil.which("pdftotext")
-    if path:
-        return path
-
-    try:
-        proc = subprocess.run(
-            ["which", "pdftotext"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        candidate = proc.stdout.strip()
-        if candidate and Path(candidate).exists():
-            return candidate
-    except Exception:
-        pass
-
-    raise RuntimeError("Could not resolve 'pdftotext' with shutil.which or shell which.")
 
 
 def array_equal_with_tolerance(a: np.ndarray, b: np.ndarray, atol: float = 1e-12) -> bool:
@@ -1019,29 +995,3 @@ def run_permutation_importance_stability(
 def write_json(path: Path, payload: Dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-
-
-def convert_pdf_to_text(pdftotext_path: str, pdf_path: Path, txt_path: Path) -> None:
-    txt_path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run([pdftotext_path, str(pdf_path), str(txt_path)], check=True)
-
-
-def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="replace")
-
-
-def first_matching_line(text: str, keywords: Sequence[str], min_len: int = 30) -> str:
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    for line in lines:
-        lower = line.lower()
-        if len(line) >= min_len and all(k.lower() in lower for k in keywords):
-            return line
-    for line in lines:
-        lower = line.lower()
-        if len(line) >= min_len and any(k.lower() in lower for k in keywords):
-            return line
-    return "No direct quote found in extracted text for this criterion."
-
-
-def temp_dir() -> tempfile.TemporaryDirectory:
-    return tempfile.TemporaryDirectory(prefix="week06_")

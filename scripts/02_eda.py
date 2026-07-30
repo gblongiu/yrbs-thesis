@@ -57,6 +57,13 @@ VALUE_COUNTS_COLS = [
 ]
 
 
+def _rel(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT.resolve()))
+    except Exception:
+        return str(path)
+
+
 def _stringify_value(v) -> str:
     if pd.isna(v):
         return "<NA>"
@@ -273,10 +280,10 @@ def main() -> None:
         "python_version": sys.version,
         "platform": platform.platform(),
         "packages": packages,
-        "input_parquet": str(in_path),
+        "input_parquet": _rel(in_path),
         "nrows": args.nrows,
         "seed": args.seed,
-        "outdir": str(outdir),
+        "outdir": _rel(outdir),
         "notes": [
             "EDA is descriptive context only (no predictive modeling).",
             "Weighted prevalence uses weight-only estimation; CIs are approximate and not design-based.",

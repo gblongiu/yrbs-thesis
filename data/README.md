@@ -1,15 +1,14 @@
 # Data Directory Policy
 
-This directory stores local datasets and staged artifacts used by the Week 1-4 pipeline.
+The `data/` tree is for local working inputs and regenerated intermediate state. It is not the place for the polished thesis deliverables that support the final submission pack.
 
-## Expected Local Layout
-- `data/raw_sources/`: original download bundles and archives (local-only)
-- `data/raw/`: extracted or manually prepared source files (local-only)
-- `data/interim/`: temporary transformation artifacts (local-only)
-- `data/processed/`: analysis-ready tables generated locally (local-only)
-- `data/transcripts/`: advisor/course transcript materials (local-only)
+## Expected Local Contents
+- `data/raw/YRBS_2023_MH_subset.xlsx`: primary local workbook used by the thesis pipeline
+- `data/processed/yrbs_2023_modeling.parquet`: regenerated analysis-ready parquet written by `scripts/01_build_dataset.py`
+- `data/interim/` and `data/transcripts/`: optional scratch space only
 
 ## Tracking Policy
-- Raw, restricted, or otherwise sensitive inputs are local-only and must not be committed.
-- Processed tables under `data/processed/` are also ignored by default.
-- Curated grading evidence is stored under `outputs/` and selectively tracked via `.gitignore` allowlist rules.
+- Raw workbooks stay local and are ignored by Git.
+- The processed parquet is regenerated locally and is not treated as a curated repository artifact.
+- Curated scientific outputs live under `outputs/`.
+- The submission-pack build script may copy the local workbook into `Draft_Thesis_Submission_GabrielLong/Code/data/raw/` when it exists, so the supplementary package can remain runnable without turning the live repository into a raw-data mirror.

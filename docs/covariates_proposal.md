@@ -1,41 +1,27 @@
-# Baseline Covariate Proposal (YRBS 2023 Mental Health Subset)
+# Baseline Covariate Lock Record
 
-This document records the Week 1-2 covariate lock for:
-**Predicting Youth Mental Health Risk from Bullying Exposure in the 2023 YRBS**.
+This document preserves the Week 1-2 covariate lock that carried through to the finished thesis.
 
-Status checkpoint (as of 2026-02-09):
-- Week 1-2 scope complete.
-- This file is active reference, not future planning.
-
-## Evidence Inputs
-- `scripts/00_schema_audit.py`
-- `outputs/tables/schema.csv`
-- `outputs/tables/missingness_summary.csv`
-- `outputs/tables/value_counts_QN24.csv`
-- `outputs/tables/value_counts_QN25.csv`
-- `outputs/tables/value_counts_QN26.csv`
-
-## Locked Configuration (Implemented in `src/config.py`)
+## Locked Configuration
 - `TARGET_PRIMARY = "QN26"`
 - `BULLYING_EXPOSURES = ["QN24", "QN25"]`
 - `BASELINE_COVARIATES = ["q1", "q2", "q3", "raceeth"]`
 - `SURVEY_DESIGN_COLS = ["weight", "stratum", "psu"]`
 
-## Covariate Rationale
-- `q1`: core demographic control for age-related risk context.
-- `q2`: core demographic control for sex-related prevalence differences.
-- `q3`: schooling-stage demographic control.
-- `raceeth`: demographic subgroup context and fairness-aware reporting.
+## Rationale
+- `q1`: demographic age context
+- `q2`: demographic sex context
+- `q3`: school-stage context
+- `raceeth`: demographic subgroup context used in the main comparison and subgroup review
 
-## Exclusions for Headline Week 1-4 Scope
-- Row-identifier or non-informative fields such as `record`, `orig_rec`, and `site`.
-- Broad behavioral fields outside the primary question to avoid scope creep.
-- Alternative outcomes `QN27` to `QN30` as predictors for the primary target.
+## Scope Boundary
+- Behavioral fields outside the thesis question were not promoted into the locked headline comparison.
+- Secondary outcomes `QN27` to `QN30` were retained as columns for continuity but not used as predictors for the primary target.
+- Survey-design fields were preserved for weighted descriptives only and never used as predictive features.
 
-## Missingness and Design Handling
-- Drop missing `QN26` rows in supervised modeling table creation.
-- Keep predictor missingness and handle in modeling pipeline.
-- Preserve `weight`, `stratum`, and `psu` for descriptive weighting context.
-
-## Forward Constraint
-Week 5+ feature expansion is allowed only as explicitly PLANNED work and must not overwrite this baseline covariate lock.
+## Supporting Evidence
+- `outputs/tables/schema.csv`
+- `outputs/tables/missingness_summary.csv`
+- `outputs/tables/value_counts_QN24.csv`
+- `outputs/tables/value_counts_QN25.csv`
+- `outputs/tables/value_counts_QN26.csv`

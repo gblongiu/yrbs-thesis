@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.util
-import json
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 
 
 def _load_module(path: Path, name: str):
@@ -21,12 +18,6 @@ def _load_module(path: Path, name: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-def _sha256_bytes(content: bytes) -> str:
-    h = hashlib.sha256()
-    h.update(content)
-    return h.hexdigest()
 
 
 def test_subgroup_undefined_handling_does_not_crash() -> None:
@@ -51,51 +42,3 @@ def test_subgroup_undefined_handling_does_not_crash() -> None:
     assert row["roc_auc_defined_flag"] is False
     assert pd.isna(row["calibration_slope"])
     assert row["slope_defined_flag"] is False
-
-
-def test_manifest_immutability_whitelist_is_enforced(tmp_path: Path) -> None:
-    module = _load_module(Path("scripts/13_upgrade_integrity_check.py"), "week07_integrity")
-
-    whitelist_rel = "docs/status_reports/report_03/Project_Status_Report_03_Submission.md"
-    non_whitelist_rel = "outputs/tables/week06_full_feature_comparison_seed2026.csv"
-
-    whitelist_file = tmp_path / whitelist_rel
-    non_whitelist_file = tmp_path / non_whitelist_rel
-    whitelist_file.parent.mkdir(parents=True, exist_ok=True)
-    non_whitelist_file.parent.mkdir(parents=True, exist_ok=True)
-
-    whitelist_file.write_text("new whitelist content", encoding="utf-8")
-    non_whitelist_file.write_text("new non whitelist content", encoding="utf-8")
-
-    manifest_payload = {
-        "new_files": [
-            {
-                "path": whitelist_rel,
-                "sha256": _sha256_bytes(b"old whitelist content"),
-            },
-            {
-                "path": non_whitelist_rel,
-                "sha256": _sha256_bytes(b"old non whitelist content"),
-            },
-        ]
-    }
-    manifest_path = tmp_path / "docs/status_reports/report_03/week06_run_manifest.json"
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(json.dumps(manifest_payload), encoding="utf-8")
-
-    failures = module.check_week06_manifest_immutability(
-        project_root=tmp_path,
-        manifest_path=manifest_path,
-        whitelist=sorted(module.WEEK6_HASH_WHITELIST),
-    )
-
-    assert any(non_whitelist_rel in msg for msg in failures)
-    assert not any(whitelist_rel in msg for msg in failures)
-
-
-def test_schema_validation_catches_missing_columns() -> None:
-    module = _load_module(Path("scripts/13_upgrade_integrity_check.py"), "week07_integrity_schema")
-    df = pd.DataFrame({"a": [1], "b": [2]})
-
-    with pytest.raises(RuntimeError):
-        module.ensure_required_columns(df, ["a", "b", "c"], "test_table")

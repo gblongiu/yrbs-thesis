@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -178,59 +179,10 @@ def write_missingness_summary(schema: pd.DataFrame, df: pd.DataFrame, out_path: 
     combined.to_csv(out_path, index=False)
 
 
-def write_qn26_prevalence(df: pd.DataFrame, group_col: str, out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    target = "QN26"
-    if target not in df.columns:
-        raise SystemExit(f"Required column missing: {target}")
-    if group_col not in df.columns:
-        raise SystemExit(f"Required column missing: {group_col}")
-
-    tmp = pd.DataFrame(
-        {
-            group_col: df[group_col].map(stringify_value),
-            target: df[target],
-        }
-    )
-
-    # Treat only {1,2} as valid responses for YRBS dichotomized QN variables.
-    valid = tmp[target].isin([1, 2])
-    tmp["_valid"] = valid
-    tmp["_is_1"] = tmp[target].eq(1)
-    tmp["_is_2"] = tmp[target].eq(2)
-
-    grouped = tmp.groupby(group_col, sort=False)
-    stats = grouped.agg(
-        n=(target, "size"),
-        n_valid=("_valid", "sum"),
-        n_1=("_is_1", "sum"),
-        n_2=("_is_2", "sum"),
-    ).reset_index()
-
-    stats["qn26_missing_rate"] = ((stats["n"] - stats["n_valid"]) / stats["n"]).round(6)
-
-    # Default qn26_rate uses the common convention (1=yes), but we also compute the alternative (2=yes).
-    stats["qn26_rate"] = np.where(stats["n_valid"] > 0, (stats["n_1"] / stats["n_valid"]).round(6), np.nan)
-    stats["qn26_rate_assuming_2_yes"] = np.where(
-        stats["n_valid"] > 0, (stats["n_2"] / stats["n_valid"]).round(6), np.nan
-    )
-
-    # Deterministic ordering: numeric groups ascending, then string; <NA> last.
-    stats["_is_na_group"] = stats[group_col].eq("<NA>")
-    stats["_group_num"] = pd.to_numeric(stats[group_col], errors="coerce")
-    stats = stats.sort_values(
-        ["_is_na_group", "_group_num", group_col],
-        ascending=[True, True, True],
-        kind="mergesort",
-        na_position="last",
-    )
-
-    stats = stats[[group_col, "n", "qn26_rate", "qn26_rate_assuming_2_yes", "qn26_missing_rate"]]
-    stats.to_csv(out_path, index=False)
-
-
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Audit the raw workbook schema and write core schema/value-count summaries.")
+    parser.parse_args()
+
     if not RAW_FILE_2023.exists():
         raise SystemExit(f"Input file not found: {RAW_FILE_2023}")
 
@@ -255,9 +207,6 @@ def main() -> None:
     design_fields = detect_design_fields(df.columns.tolist())
     for col in VALUE_COUNTS_COLUMNS + design_fields:
         write_value_counts(df[col], col, TABLES_DIR)
-
-    write_qn26_prevalence(df, group_col="raceeth", out_path=TABLES_DIR / "qn26_prevalence_by_raceeth.csv")
-    write_qn26_prevalence(df, group_col="q1", out_path=TABLES_DIR / "qn26_prevalence_by_q1.csv")
 
     print("Wrote schema audit outputs to outputs/tables/")
 
