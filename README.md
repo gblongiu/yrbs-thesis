@@ -2,6 +2,8 @@
 
 Final thesis repository for Gabriel Long's INFO-I 492 project on whether bullying exposure variables improve prediction of persistent sadness or hopelessness in the 2023 national Youth Risk Behavior Survey.
 
+**Final manuscript:** [Read the complete thesis PDF](manuscript/Long_Gabriel_INFOI492_ThesisPaper_FINAL.pdf).
+
 ## Thesis Boundary
 - Primary outcome: `QN26` / `y_qn26`
 - Locked baseline covariates: `q1`, `q2`, `q3`, `raceeth`
@@ -9,6 +11,12 @@ Final thesis repository for Gabriel Long's INFO-I 492 project on whether bullyin
 - Evaluation frame: frozen held-out split plus frozen cross-validation folds under seed `2026`
 
 This repository is the canonical source of truth for the finished thesis workflow. It supports a bounded predictive analysis only. It does not make causal claims, does not add new datasets or outcomes, and is not a deployment package or screening tool.
+
+## Key Results
+- Selected model: Platt-calibrated histogram gradient boosting with the full predictor set (`hgb_full_platt`).
+- Held-out performance: ROC AUC `0.716057`, PR AUC `0.644073`, Brier score `0.206122`, and calibration slope `1.005455`.
+- Adding the bullying block versus the non-bullying HGB comparator improved held-out ROC AUC by `0.065857` and PR AUC by `0.106201`.
+- The same ablation reduced held-out Brier score by `0.019046`; these results are predictive, not causal or deployment-ready.
 
 ## What Is In Scope Here
 - Analysis-ready dataset construction from the local YRBS workbook
@@ -21,6 +29,7 @@ This repository is the canonical source of truth for the finished thesis workflo
 ## Repository Layout
 - `data/`: local working input policy and regenerated intermediate state
 - `docs/`: final technical documentation, methods notes, proposal-scope audit, and reproducibility guidance
+- `manuscript/`: final thesis manuscript in PDF format
 - `outputs/`: curated aggregated metrics, tables, figures, split artifacts, and tuned-parameter JSON files
 - `presentation/`: final slide outline, speaker notes, and slide asset manifest
 - `scripts/`: pipeline entrypoints and the submission-pack build script

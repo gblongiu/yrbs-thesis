@@ -38,6 +38,7 @@ tmp/
 ~$*.docx
 ~$*.xlsx
 ~$*.pptx
+/*.pptx
 *.zip
 *_Submission_*/
 
